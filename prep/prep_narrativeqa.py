@@ -11,7 +11,7 @@ from nltk.tokenize import word_tokenize
 import json
 import os
 import gzip
-from utilities import *
+# from utilities import *
 # from utils import *
 from nltk.stem.porter import PorterStemmer
 import argparse
