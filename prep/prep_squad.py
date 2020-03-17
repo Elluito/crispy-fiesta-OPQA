@@ -756,8 +756,8 @@ def load_set(fp, datatype='train'):
     return all_words, all_data, all_feats
 
 
-train_words, train_data, train_feats = load_set('../corpus/squad/train-v1.1.json')
-dev_words, dev_data, dev_feats = load_set('../corpus/squad/dev-v1.1.json')
+train_words, train_data, train_feats = load_set('./corpus/squad/train-v1.1.json')
+dev_words, dev_data, dev_feats = load_set('./corpus/squad/dev-v1.1.json')
 # test_words, test_data, test_feats = load_set('./corpus/NewsQA/tokenized-test-v1.1.json')
 
 print('train={}'.format(len(train_data)))
@@ -778,7 +778,7 @@ print("Vocab Size={}".format(len(word_index)))
 # Convert passages to tokens
 # passages = dict(train_passage.items() + test_passage.items() + dev_passage.items())
 
-fp = '../datasets/Squad/'
+fp = './datasets/Squad/'
 
 if not os.path.exists(fp):
     os.makedirs(fp)
@@ -805,5 +805,5 @@ feature_env = {
     'dev':dev_feats
     }
 
-dictToFile(env,'../datasets/Squad/env.gz'.format(mode))
-dictToFile(feature_env,'../datasets/Squad/feats.gz'.format(mode))
+dictToFile(env,'./datasets/Squad/env.gz'.format(mode))
+dictToFile(feature_env,'./datasets/Squad/feats.gz'.format(mode))
