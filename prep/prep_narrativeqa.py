@@ -594,7 +594,7 @@ def dictToFile(dict, path, use_zip=True):
             f.write(json.dumps(dict))
     else:
         with gzip.open(path, 'w') as f:
-            f.write(bytes(json.dumps(dict)))
+            f.write(bytes(json.dumps(dict), 'utf-8'))
 
 
 def dictFromFileUnicode(path):
