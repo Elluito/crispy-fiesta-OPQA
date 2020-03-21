@@ -590,11 +590,11 @@ def dictToFile(dict, path, use_zip=True):
     '''
     print("Writing to {}".format(path))
     if(use_zip==False):
-        with open(path, 'w+b') as f:
+        with open(path, 'w') as f:
             f.write(json.dumps(dict))
     else:
-        with gzip.open(path, 'w+b') as f:
-            f.write(json.dumps(dict))
+        with gzip.open(path, 'w') as f:
+            f.write(bytes(json.dumps(dict)))
 
 
 def dictFromFileUnicode(path):
