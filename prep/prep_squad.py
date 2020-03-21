@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy.random as npr
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# from __future__ import absolute_import
+# from __future__ import division
+# from __future__ import print_function
 import numpy as np
 from collections import Counter
 from nltk.tokenize import TweetTokenizer
