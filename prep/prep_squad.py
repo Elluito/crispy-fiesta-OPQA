@@ -556,9 +556,9 @@ def build_embeddings(word_index, index_word, num_extra_words=2,
         #     matrix = matrix / norm
 
         # print(oov_words)
-        with open('{}/oov.txt'.format(out_dir), 'w+') as f:
+        with open('{}/oov.txt'.format(out_dir), 'w+b',encoding="utf8") as f:
             for w in oov_words:
-                f.write(w.encode('utf-8') + '\n')
+                f.write(w +'\n')
         print(matrix.shape)
         print(len(word_index))
         print("oov={}".format(oov))
@@ -588,8 +588,8 @@ def dictToFile(dict, path, use_zip=True):
         with open(path, 'w') as f:
             f.write(json.dumps(dict))
     else:
-        with gzip.open(path, 'w') as f:
-            f.write(json.dumps(dict))
+        with gzip.open(path, 'wb') as f:
+            f.write(bytes(json.dumps(dict),"utf-8"))
 
 
 def dictFromFileUnicode(path):
