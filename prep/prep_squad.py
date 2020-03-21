@@ -556,7 +556,7 @@ def build_embeddings(word_index, index_word, num_extra_words=2,
         #     matrix = matrix / norm
 
         # print(oov_words)
-        with open('{}/oov.txt'.format(out_dir), 'w+b',encoding="utf8") as f:
+        with open('{}/oov.txt'.format(out_dir), 'w',encoding="utf8") as f:
             for w in oov_words:
                 f.write(w +'\n')
         print(matrix.shape)
