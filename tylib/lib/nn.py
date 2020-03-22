@@ -460,7 +460,7 @@ def projection_layer(inputs, output_dim, name='', reuse=None,
             _dim = output.get_shape().as_list()[1]
             if(use_mode=='FC'):
                 weights = tf.get_variable('weights_{}'.format(i),
-                              [_dim, output_dim],
+                              # [_dim, output_dim],
                               initializer=initializer)
                 zero_init = tf.zeros_initializer()
                 bias = tf.get_variable('bias_{}'.format(i),
