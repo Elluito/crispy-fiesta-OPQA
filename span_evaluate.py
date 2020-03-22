@@ -8,10 +8,10 @@ import json
 import sys
 import numpy as np
 
-from tylib.pycocoevalcap.bleu.bleu import Bleu
-from tylib.pycocoevalcap.rouge.rouge import Rouge
-from tylib.pycocoevalcap.cider.cider import Cider
-from tylib.pycocoevalcap.meteor.meteor import Meteor
+# from tylib.pycocoevalcap.bleu.bleu import Bleu
+# from tylib.pycocoevalcap.rouge.rouge import Rouge
+# from tylib.pycocoevalcap.cider.cider import Cider
+# from tylib.pycocoevalcap.meteor.meteor import Meteor
 
 
 def get_ans_string_single_post_pad_search_updated(context, context_words,

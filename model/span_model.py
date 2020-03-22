@@ -20,7 +20,7 @@ import operator
 import tensorflow.contrib.slim as slim
 
 import datetime
-
+from .vanilla import _build_vanilla_model
 from tylib.lib.seq_op import *
 from tylib.lib.nn import *
 from tylib.lib.att_op import *
@@ -28,9 +28,9 @@ from tylib.lib.compose_op import *
 from tylib.lib.cnn import *
 from tylib.models.base_model import BaseModel
 from tylib.lib.sim_op import *
-from tylib.lib.enhanced import *
+# from tylib.lib.enhanced import *
 from tylib.exp.multi_gpu import *
-from tylib.lib.bimpm import *
+# from tylib.lib.bimpm import *
 from tylib.exp.utilities import *
 from tylib.lib.func import *
 from tylib.lib.cudnn_cove_lstm import *
@@ -380,7 +380,7 @@ class SpanModel(BaseModel):
                             self.doc_mask, self.qmask)
 
         else:
-            self = build_vanilla_model(self, doc_hidden, doc_len, query_hidden,
+            self = _build_vanilla_model(self, doc_hidden, doc_len, query_hidden,
                                 query_len, self.doc_mask, self.qmask)
             return
 
@@ -395,7 +395,7 @@ class SpanModel(BaseModel):
             # with tf.variable_scope(tf.get_variable_scope()):
             lr = self._get_learn_rate()
             opt = self._get_optimizer(lr)
-            for i in xrange(self.args.num_gpu):
+            for i in range(self.args.num_gpu):
                 with tf.device('/gpu:%d' % i):
                     # with tf.variable_scope('model', reuse=(i>0),
                     #         caching_device='/cpu:0') as scope:
