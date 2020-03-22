@@ -74,7 +74,7 @@ def intra_attention(sentence, dim, initializer=None, activation=None,
 									weights_regularizer=weights_regularizer,
 									initializer=initializer,
 									dropout=dropout,
-									use_fc=False,
+									# use_fc=False,
 									num_layers=2,
 									reuse=reuse)
 		sentence2 = tf.transpose(sentence, [0,2,1])
