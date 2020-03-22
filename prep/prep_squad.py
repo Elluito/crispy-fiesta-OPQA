@@ -786,7 +786,7 @@ if not os.path.exists(fp):
 build_embeddings(word_index, index_word,
   out_dir=fp,
   init_type='zero', init_val=0.01,
-  emb_types=[('glove',300),('glove',100)],
+  emb_types=[('glove',300)],
   normalize=False)
 
 passages = {}
