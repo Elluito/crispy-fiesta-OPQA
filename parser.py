@@ -337,7 +337,7 @@ def build_parser():
     ps('--use_cudnn', dest='use_cudnn', type=int, default=1)
     ps('--use_cove', dest='use_cove', type=int, default=0)
     ps('--beam_size', dest='beam_size', type=int, default=1,
-            help='beam_size'))
+            help='beam_size')
     ps('--mask_entities', dest='mask_entities', type=int, default=0,
             help='use entity masking..')
     ps('--use_elmo', dest='use_elmo', type=int, default=0)
