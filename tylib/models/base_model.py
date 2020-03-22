@@ -5,13 +5,13 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from ..lib.stat import *
+# from ..lib.stat import *
 from ..lib.seq_op import *
 from ..lib.nn import *
 from ..lib.att_op import *
-from ..lib.loss import *
-from ..lib.compose_op import *
-from ..lib.opt import *
+# from ..lib.loss import *
+# from ..lib.compose_op import *
+# from ..lib.opt import *
 
 import gzip
 import json
