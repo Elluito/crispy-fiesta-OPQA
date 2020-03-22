@@ -6,10 +6,11 @@ import tensorflow as tf
 import numpy as np
 from .nn import *
 from .compose_op import *
-from .complex_op import *
+# from .complex_op import *
 from .cnn import *
 from .sim_op import *
-from .qrnn import *
+from .func import *
+# from .qrnn import *
 
 
 def get_distance_biases(time_steps, reuse_weights=False, dist_bias=10):
