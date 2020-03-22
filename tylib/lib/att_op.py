@@ -635,15 +635,15 @@ def bidirectional_attention_connector(q1_embed,
 		_i1_embed, _i2_embed =  intra_attention(
 										q1_embed, q2_embed,
 										q1_len, q2_len,
-										att_type=att_type,
-										name='intra_{}'.format(name),
+										# att_type=att_type,
+										# name='intra_{}'.format(name),
 										reuse=reuse,
 										dist_bias=0,
-										initializer=initializer,
+										# initializer=initializer,
 										dropout=dropout,
-										mask_a=mask_a,
-										mask_b=mask_b,
-										transform_layers=0,
+										# mask_a=mask_a,
+										# mask_b=mask_b,
+										# transform_layers=0,
 										pooling=pooling
 										)
 
