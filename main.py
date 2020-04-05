@@ -187,7 +187,7 @@ def build_model(max_seq_length = 512 ):
     dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
 
     similarity_matrix = 1 / ( dim** (1 / 2)) * tf.matmul(activation(question_sequence_output),activation(context_sequence_output),transpose_b=True,name="Attention_matmul")
-    temp = tf.math.reduce_max(similarity_matrix, axis=1,keep_dims=True,name="Reduction_of_similarity_function")
+    temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
 
     temp = tf.math.softmax(temp)
     new_representation =tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
