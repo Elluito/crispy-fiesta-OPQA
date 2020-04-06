@@ -195,7 +195,7 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    bert_layer = hub.KerasLayer(url_uncased, trainable=True, name="Bert_model")
+    bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
     # print(tf.shape(question_sequence_output))
