@@ -10,7 +10,7 @@ from reading_datasets import read_dataset
 import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
-# tf.compat.v1.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
@@ -127,11 +127,11 @@ def loss(model, x, y, training):
   # training=training is needed only if there are layers with different
   # behavior during training versus inference (e.g. Dropout).
     loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-    x=list(map(list,x))
+
     y1_pred=[]
     y2_pred=[]
-    for elem in x:
-        y1,y2 = model(elem,training=True)
+    for elem in list(x):
+        y1,y2 = model(list(elem),training=True)
         y1_pred.append(y1)
         y2_pred.append(y2)
 
@@ -146,7 +146,7 @@ def grad(model, inputs, targets):
 
 def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
-    train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
+    # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
     train_loss_results=[]
     train_accuracy_results=[]
 
@@ -155,8 +155,9 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
         epoch_accuracy = tf.keras.metrics.CategoricalAccuracy()
 
         # Training loop - using batches of 32
-        i=0
-        for x, y in train_dataset:
+
+        for i in range(step_per_epoch):
+            x,y=crear_batch(X,np.array(Y),batch_size)
             # Optimize the model
             loss_value, grads = grad(model, x, y)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -167,9 +168,6 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
             # training=True is needed only if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
             epoch_accuracy(y, model(x, training=True))
-            i+=1
-            if i>step_per_epoch:
-                break
 
 
         # End epoch
@@ -243,6 +241,13 @@ def build_model(max_seq_length = 512 ):
     return model
     # optim=keras.optimizers.Adam(lr=0.0001)
     # model.compile(optimizer=optim,loss=log_loss_function)
+def crear_batch(X,y,batchsize=32):
+    indices=np.random.randint(0,len(X),batchsize)
+    return X[indices,:],y[indices]
+
+
+
+
 
 # natural_questions_dataset_path ="D:\datsets_tesis\Kaggle_competition\Tensorflow_Q_and_A_competition/"
 
