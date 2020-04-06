@@ -147,6 +147,7 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
     for epoch in range(epochs):
+        print("VCoy a empezar el entrenamiento")
         epoch_loss_avg = tf.keras.metrics.Mean()
         epoch_accuracy_start = tf.keras.metrics.CategoricalAccuracy()
         epoch_accuracy_end = tf.keras.metrics.CategoricalAccuracy()
@@ -163,12 +164,15 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
             # Compare predicted label to actual label
             # training=True is needed only if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
+
             entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
                        "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
                        "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
             y1,y2= model(entrada, training=True)
+
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_start(y[:, 1], y2)
+            print("Terminé setp {} de {} de la época {} ".format(i,step_per_epoch,epoch))
 
 
         # End epoch
