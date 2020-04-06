@@ -126,14 +126,18 @@ def convert_sentences_to_features(sentences, tokenizer, max_seq_len=20):
 def loss(model, x, y, training):
   # training=training is needed only if there are layers with different
   # behavior during training versus inference (e.g. Dropout).
-  loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-  x=x.numpy()
-  y1,y2 = model(x,training=True)
-  print(y1.shape)
-  print(y2.shape)
-  loss=loss_object(y_true=y[:,0], y_pred=y1)+loss_object(y_true=y[:,1], y_pred=y2)
+    loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    x=list(map(list,x))
+    y1_pred=[]
+    y2_pred=[]
+    for elem in x:
+        y1,y2 = model(elem,training=True)
+        y1_pred.append(y1)
+        y2_pred.append(y2)
 
-  return loss
+    loss=loss_object(y_true=y[:,0], y_pred=y1_pred)+loss_object(y_true=y[:,0], y_pred=y2_pred)
+
+    return loss
 
 def grad(model, inputs, targets):
   with tf.GradientTape() as tape:
