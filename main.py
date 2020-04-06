@@ -11,7 +11,7 @@ import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,
