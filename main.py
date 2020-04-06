@@ -11,7 +11,7 @@ import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,
@@ -128,14 +128,13 @@ def loss(model, x, y, training):
   # behavior during training versus inference (e.g. Dropout).
     loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
-    y1_pred=[]
-    y2_pred=[]
-    for elem in list(x):
-        y1,y2 = model(list(elem),training=True)
-        y1_pred.append(y1)
-        y2_pred.append(y2)
 
-    loss=loss_object(y_true=y[:,0], y_pred=y1_pred)+loss_object(y_true=y[:,0], y_pred=y2_pred)
+
+    entrada={"questions_id": np.squeeze(x[:,3]), "question_input_mask": np.squeeze(x[:,4]), "question_segment_id": np.squeeze(x[:,5]),"context_id": np.squeeze(x[:,0]), "context_input_mask": np.squeeze(x[:,1]), "context_segment_id": np.squeeze(x[:,2])}
+
+    y1,y2 = model(entrada,training=training)
+
+    loss=loss_object(y_true=y[:,0], y_pred=y1)+loss_object(y_true=y[:,0], y_pred=y2)
 
     return loss
 
@@ -223,19 +222,21 @@ def build_model(max_seq_length = 512 ):
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
     W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
+
+
     temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
     temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
     soft_max_start = tf.nn.softmax(temp_start)
     soft_max_end = tf.nn.softmax(temp_end)
 
-    soft_max_start=tf.reshape(soft_max_start,[-1,max_seq_length],name="start_output")
-    soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
+    # soft_max_start=tf.reshape(soft_max_start,[-1,max_seq_length],name="start_output")
+    # soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
 
 
     logits_for_start = tf.math.log(soft_max_start,name="log_start")
     logits_for_end = tf.math.log(soft_max_end,name="log_end")
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[logits_for_end, logits_for_start],name="Luis_net")
-    model.build(input_shape=[None,6,1,max_seq_length])
+    model.build(input_shape=[None,None])
     # model.compile(optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.0001),loss=[tf.keras.losses.CategoricalCrossentropy(),tf.keras.losses.CategoricalCrossentropy()])
     model.summary()
     return model
@@ -275,9 +276,11 @@ X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_s
 N=len(X_train)
 X_train=np.array(X_train)
 # entrada=[X_train[0,0,0][:512].reshape(1,512),X_train[0,1,0][:512].reshape(1,512),X_train[0,2,0][:512].reshape(1,512),X_train[0,3,0][:512].reshape(1,512),X_train[0,4,0][:512].reshape(1,512),X_train[0,5,0][:512].reshape(1,512)]
-prob_start,prob_end=model(X[:3],training=False)
-print(prob_end)
-print(prob_start)
+# cosa1,cosa2,cosa3,cosa4,cosa5,cosa6=X[0]
+#
+# prueba={"questions_id":np.array([cosa4.reshape(-1),cosa4.reshape(-1)]), "question_input_mask": np.array([cosa5.reshape(-1),cosa5.reshape(-1)]), "question_segment_id":np.array([cosa6.reshape(-1),cosa6.reshape(-1)]),"context_id": np.array([cosa1.reshape(-1),cosa1.reshape(-1)]), "context_input_mask":np.array([cosa2.reshape(-1),cosa2.reshape(-1)]), "context_segment_id":np.array([cosa3.reshape(-1),cosa3.reshape(-1)])}
+# prob_start,prob_end=model(prueba,training=True)
+
 train_model(model,X_train,y_train)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
