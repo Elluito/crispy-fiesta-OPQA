@@ -270,7 +270,10 @@ def crear_batch(X,y,batchsize=32):
 
 max_seq_length = 512 # Your choice here.
 mex_text_length=512*4
+print("VOY A HACER EL MODELO")
 model=build_model(max_seq_length)
+
+print("YA HICE EL MODELO")
 # print(model.weights)
 # with tf.Session() as sess:
 #   # Run the init operation.
