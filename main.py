@@ -10,7 +10,7 @@ from reading_datasets import read_dataset
 import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
-
+tf.compat.v1.enable_eager_execution()
 os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
@@ -136,7 +136,7 @@ def grad(model, inputs, targets):
     loss_value = loss(model, inputs, targets, training=True)
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
-def train_model(max_seq_length=512):
+def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epoch=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     for epoch in range(num_epochs):
         epoch_loss_avg = tf.keras.metrics.Mean()
@@ -240,7 +240,7 @@ def build_model(max_seq_length = 512 ):
 # Later, when launching the model
 
 
-max_seq_length = 900 # Your choice here.
+max_seq_length = 512 # Your choice here.
 mex_text_length=512*4
 model=build_model(max_seq_length)
 # print(model.weights)
@@ -254,6 +254,10 @@ X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_s
 
 N=len(X_train)
 X_train=np.array(X_train)
+# entrada=[X_train[0,0,0][:512].reshape(1,512),X_train[0,1,0][:512].reshape(1,512),X_train[0,2,0][:512].reshape(1,512),X_train[0,3,0][:512].reshape(1,512),X_train[0,4,0][:512].reshape(1,512),X_train[0,5,0][:512].reshape(1,512)]
+# prob_start,prob_end=model(entrada,training=False)
+
+
 X_test_= np.array(X_test)
 X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
