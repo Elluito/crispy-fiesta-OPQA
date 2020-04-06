@@ -255,8 +255,9 @@ X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_s
 N=len(X_train)
 X_train=np.array(X_train)
 # entrada=[X_train[0,0,0][:512].reshape(1,512),X_train[0,1,0][:512].reshape(1,512),X_train[0,2,0][:512].reshape(1,512),X_train[0,3,0][:512].reshape(1,512),X_train[0,4,0][:512].reshape(1,512),X_train[0,5,0][:512].reshape(1,512)]
-# prob_start,prob_end=model(entrada,training=False)
-
+prob_start,prob_end=model(X[0],training=False)
+print(prob_end)
+print(prob_start)
 
 X_test_= np.array(X_test)
 X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
