@@ -10,7 +10,7 @@ from reading_datasets import read_dataset
 import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
-tf.compat.v1.enable_eager_execution()
+# tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
@@ -126,23 +126,29 @@ def convert_sentences_to_features(sentences, tokenizer, max_seq_len=20):
 def loss(model, x, y, training):
   # training=training is needed only if there are layers with different
   # behavior during training versus inference (e.g. Dropout).
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-  y_ = model(x, training=training)
+  loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+  y1,y2 = model(list(map(list,x)),training=True)
+  loss=loss_object(y_true=y[0], y_pred=y1)+loss_object(y_true=y[1], y_pred=y2)
 
-  return loss_object(y_true=y, y_pred=y_)
+  return loss
 
 def grad(model, inputs, targets):
   with tf.GradientTape() as tape:
     loss_value = loss(model, inputs, targets, training=True)
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
-def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epoch=10):
+def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
-    for epoch in range(num_epochs):
+    train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
+    train_loss_results=[]
+    train_accuracy_results=[]
+
+    for epoch in range(epochs):
         epoch_loss_avg = tf.keras.metrics.Mean()
-        epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+        epoch_accuracy = tf.keras.metrics.CategoricalAccuracy()
 
         # Training loop - using batches of 32
+        i=0
         for x, y in train_dataset:
             # Optimize the model
             loss_value, grads = grad(model, x, y)
@@ -154,15 +160,17 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epoch=10):
             # training=True is needed only if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
             epoch_accuracy(y, model(x, training=True))
+            i+=1
+            if i>step_per_epoch:
+                break
+
 
         # End epoch
         train_loss_results.append(epoch_loss_avg.result())
         train_accuracy_results.append(epoch_accuracy.result())
 
-        if epoch % 50 == 0:
-            print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,
-                                                                        epoch_loss_avg.result(),
-                                                                        epoch_accuracy.result()))
+        # if epoch % 50 == 0:
+        print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,epoch_loss_avg.result(),epoch_accuracy.result()))
 
 
 def build_model(max_seq_length = 512 ):
@@ -215,13 +223,13 @@ def build_model(max_seq_length = 512 ):
     soft_max_start = tf.nn.softmax(temp_start)
     soft_max_end = tf.nn.softmax(temp_end)
 
-    soft_max_start=tf.reshape(soft_max_start,[-1,1,max_seq_length],name="start_output")
-    soft_max_end=tf.reshape(soft_max_end,[-1,1,max_seq_length],name="end_output")
+    soft_max_start=tf.reshape(soft_max_start,[-1,max_seq_length],name="start_output")
+    soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
 
 
-    # logits_for_start = tf.math.log(soft_max_start,name="log_start")
-    # logits_for_end = tf.math.log(soft_max_end,name="log_end")
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[soft_max_start, soft_max_end],name="Luis_net")
+    logits_for_start = tf.math.log(soft_max_start,name="log_start")
+    logits_for_end = tf.math.log(soft_max_end,name="log_end")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[logits_for_end, logits_for_start],name="Luis_net")
     model.build(input_shape=[None,6,1,max_seq_length])
     # model.compile(optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.0001),loss=[tf.keras.losses.CategoricalCrossentropy(),tf.keras.losses.CategoricalCrossentropy()])
     model.summary()
@@ -258,7 +266,7 @@ X_train=np.array(X_train)
 prob_start,prob_end=model(X[:3],training=False)
 print(prob_end)
 print(prob_start)
-
+train_model(model,X_train,y_train)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
