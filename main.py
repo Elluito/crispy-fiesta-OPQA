@@ -128,7 +128,9 @@ def loss(model, x, y, training):
   # behavior during training versus inference (e.g. Dropout).
   loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
   y1,y2 = model(list(map(list,x)),training=True)
-  loss=loss_object(y_true=y[:,0], y_pred=y1)+loss_object(y_true=y[:,0], y_pred=y2)
+  print(y1)
+  print(y2)
+  loss=loss_object(y_true=y[:,0], y_pred=y1)+loss_object(y_true=y[:,1], y_pred=y2)
 
   return loss
 
