@@ -263,7 +263,7 @@ X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_in
 X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
 y_train_array=np.array(y_train)
 y_train={"tf_op_layer_start_output":y_train_array[:,0].reshape(-1,1,max_seq_length),"tf_op_layer_end_output":y_train_array[:,1].reshape(-1,1,max_seq_length)}
-model.fit(X_train,y_train,batch_size=N,epochs=10)
+model.fit(X_train,y_train,batch_size=35,epochs=10)
 model.save("modelo_prueba.h5")
 y_pred=model.predict(X_test_pre)
 cosas =""
