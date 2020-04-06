@@ -11,7 +11,7 @@ import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+#os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,
@@ -281,7 +281,7 @@ X_train=np.array(X_train)
 # prueba={"questions_id":np.array([cosa4.reshape(-1),cosa4.reshape(-1)]), "question_input_mask": np.array([cosa5.reshape(-1),cosa5.reshape(-1)]), "question_segment_id":np.array([cosa6.reshape(-1),cosa6.reshape(-1)]),"context_id": np.array([cosa1.reshape(-1),cosa1.reshape(-1)]), "context_input_mask":np.array([cosa2.reshape(-1),cosa2.reshape(-1)]), "context_segment_id":np.array([cosa3.reshape(-1),cosa3.reshape(-1)])}
 # prob_start,prob_end=model(prueba,training=True)
 
-train_model(model,X_train,y_train)
+train_model(model,X_train,y_train,batch_size=3)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
