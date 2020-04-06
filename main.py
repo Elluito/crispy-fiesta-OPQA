@@ -146,13 +146,10 @@ def grad(model, inputs, targets):
 def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
-    train_loss_results=[]
-    train_accuracy_results=[]
-
     for epoch in range(epochs):
         epoch_loss_avg = tf.keras.metrics.Mean()
-        epoch_accuracy = tf.keras.metrics.CategoricalAccuracy()
-
+        epoch_accuracy_start = tf.keras.metrics.CategoricalAccuracy()
+        epoch_accuracy_end = tf.keras.metrics.CategoricalAccuracy()
         # Training loop - using batches of 32
 
         for i in range(step_per_epoch):
@@ -166,15 +163,21 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
             # Compare predicted label to actual label
             # training=True is needed only if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
-            epoch_accuracy(y, model(x, training=True))
+            entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
+                       "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
+                       "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
+            y1,y2= model(entrada, training=True)
+            epoch_accuracy_start(y[:,0],y1)
+            epoch_accuracy_start(y[:, 1], y2)
 
 
         # End epoch
-        train_loss_results.append(epoch_loss_avg.result())
-        train_accuracy_results.append(epoch_accuracy.result())
+        # train_loss_results.append(epoch_loss_avg.result())
+        # train_accuracy_results_start.append(epoch_accuracy_start.result())
+        # train_accuracy_results_end.append(epoch_accuracy_end.result())
 
         # if epoch % 50 == 0:
-        print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,epoch_loss_avg.result(),epoch_accuracy.result()))
+        print("Epoch {:03d}: Loss: {:.3f}, Accuracy_for_start: {:.3%} ,  Accuracy_for_end: {:.3%}".format(epoch,epoch_loss_avg.result(),epoch_accuracy_start.result(),epoch_accuracy_end.result()))
 
 
 def build_model(max_seq_length = 512 ):
