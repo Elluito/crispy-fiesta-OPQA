@@ -243,8 +243,8 @@ def build_model(max_seq_length = 512 ):
     logits_for_start = tf.math.log(soft_max_start,name="log_start")
     logits_for_end = tf.math.log(soft_max_end,name="log_end")
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[logits_for_end, logits_for_start],name="Luis_net")
+
     model.build(input_shape=[None,None])
-    # model.compile(optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.0001),loss=[tf.keras.losses.CategoricalCrossentropy(),tf.keras.losses.CategoricalCrossentropy()])
     model.summary()
     return model
     # optim=keras.optimizers.Adam(lr=0.0001)
@@ -292,6 +292,7 @@ X_train=np.array(X_train)
 # prob_start,prob_end=model(prueba,training=True)
 
 train_model(model,X_train,y_train,batch_size=3)
+model.save("modelo_prueba.h5")
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
