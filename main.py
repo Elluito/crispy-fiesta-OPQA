@@ -146,8 +146,9 @@ def grad(model, inputs, targets):
 def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
+    print("VCoy a empezar el entrenamiento")
     for epoch in range(epochs):
-        print("VCoy a empezar el entrenamiento")
+
         epoch_loss_avg = tf.keras.metrics.Mean()
         epoch_accuracy_start = tf.keras.metrics.CategoricalAccuracy()
         epoch_accuracy_end = tf.keras.metrics.CategoricalAccuracy()
@@ -172,7 +173,7 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
 
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_start(y[:, 1], y2)
-            print("Terminé setp {} de {} de la época {} ".format(i,step_per_epoch,epoch))
+
 
 
         # End epoch
@@ -195,7 +196,7 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_model")
+    bert_layer = hub.KerasLayer(url_uncased, trainable=True, name="Bert_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
     # print(tf.shape(question_sequence_output))
@@ -291,7 +292,7 @@ X_train=np.array(X_train)
 # prueba={"questions_id":np.array([cosa4.reshape(-1),cosa4.reshape(-1)]), "question_input_mask": np.array([cosa5.reshape(-1),cosa5.reshape(-1)]), "question_segment_id":np.array([cosa6.reshape(-1),cosa6.reshape(-1)]),"context_id": np.array([cosa1.reshape(-1),cosa1.reshape(-1)]), "context_input_mask":np.array([cosa2.reshape(-1),cosa2.reshape(-1)]), "context_segment_id":np.array([cosa3.reshape(-1),cosa3.reshape(-1)])}
 # prob_start,prob_end=model(prueba,training=True)
 
-train_model(model,X_train,y_train,batch_size=3)
+train_model(model,X_train,y_train,batch_size=3,epochs=3000)
 model.save("modelo_prueba.h5")
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
