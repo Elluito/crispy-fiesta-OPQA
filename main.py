@@ -11,7 +11,7 @@ import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
 if gpus:
@@ -142,13 +142,15 @@ def loss(model, x, y, training):
   # behavior during training versus inference (e.g. Dropout).
     loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
+    y_1=[]
+    y_2=[]
+    for elem in list(x):
+        entrada={"questions_id": elem[3], "question_input_mask":elem[4], "question_segment_id": elem[5],"context_id": elem[0], "context_input_mask": elem[1], "context_segment_id":elem[2]}
+        y1,y2 = model(entrada)
+        y_1.append(y1)
+        y_2.append(y2)
 
-
-    entrada={"questions_id": np.squeeze(x[:,3]), "question_input_mask": np.squeeze(x[:,4]), "question_segment_id": np.squeeze(x[:,5]),"context_id": np.squeeze(x[:,0]), "context_input_mask": np.squeeze(x[:,1]), "context_segment_id": np.squeeze(x[:,2])}
-
-    y1,y2 = model(entrada,training=training)
-
-    loss=loss_object(y_true=y[:,0], y_pred=y1)+loss_object(y_true=y[:,0], y_pred=y2)
+    loss=loss_object(y_true=y[:,0], y_pred=y_1)+loss_object(y_true=y[:,0], y_pred=y_2)
 
     return loss
 
