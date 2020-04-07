@@ -307,9 +307,11 @@ X_train=np.array(X_train)
 # prob_start,prob_end=model(prueba,training=True)
 
 train_model(model,X_train,y_train,batch_size=3,epochs=3000)
-model.save("modelo_prueba.h5")
+import time
+t=time.time()
+model.save("modelo_prueba{}.h5".format(t))
 
-metric_(X_test,y_test,y_pred)
+# metric_(X_test,y_test,y_pred)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
