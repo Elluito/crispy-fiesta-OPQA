@@ -172,22 +172,23 @@ def train_model(model,X,Y,log_name,batch_size=32,step_per_epoch=10,epochs=10):
         for i in range(step_per_epoch):
             x,y=crear_batch(X,np.array(Y),batch_size)
             # Optimize the model
-            loss_value, grads = grad(model, x, y)
-            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            with tf.device("GPU:0"):
+                loss_value, grads = grad(model, x, y)
+                optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-            # Track progress
-            epoch_loss_avg(loss_value)  # Add current batch loss
-            # Compare predicted label to actual label
-            # training=True is needed only if there are layers with different
-            # behavior during training versus inference (e.g. Dropout).
+                # Track progress
+                epoch_loss_avg(loss_value)  # Add current batch loss
+                # Compare predicted label to actual label
+                # training=True is needed only if there are layers with different
+                # behavior during training versus inference (e.g. Dropout).
 
-            entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
-                       "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
-                       "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
-            y1,y2= model(entrada, training=True)
+                entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
+                           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
+                           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
+                y1,y2= model(entrada, training=True)
 
-            epoch_accuracy_start(y[:,0],y1)
-            epoch_accuracy_start(y[:, 1], y2)
+                epoch_accuracy_start(y[:,0],y1)
+                epoch_accuracy_start(y[:, 1], y2)
 
 
 
