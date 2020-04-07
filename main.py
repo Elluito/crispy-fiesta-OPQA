@@ -4,7 +4,7 @@ import tensorflow as tf
 import  tensorflow.keras as keras
 from models import MyDenseLayer
 from tensorflow.keras.layers import LSTM
-from official.nlp.bert.tokenization import FullTokenizer
+from official.nlp.bert.tokenization import FullTokenizer,FullSentencePieceTokenizer
 from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
 import numpy as np
@@ -26,12 +26,11 @@ if gpus:
         # Memory growth must be set before GPUs have been initialized
         print(e)
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
+url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased)
-vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-tokenizer = FullTokenizer(vocab_file, do_lower_case)
+vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
+tokenizer = FullSentencePieceTokenizer(vocab_file)
 
 del bert_layer
 # del vocab_file
@@ -221,8 +220,12 @@ def build_model(max_seq_length = 512 ):
     context_pooled_output, context_sequence_output = bert_layer([context_input_word_ids, context_input_mask, context_segment_ids])
     # print(tf.shape(context_sequence_output))
     activation = keras.activations.elu
-    substring=[i for i in url_uncased.split("_") if "H-" in i][0]
-    dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
+    substring=[i for i in url_uncased.split("_") if "H-" in i]
+    if substring==[]:
+        dim=768
+    else:
+        substring=substring[0]
+        dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
 
     similarity_matrix = 1 / ( dim** (1 / 2)) * tf.matmul(activation(question_sequence_output),activation(context_sequence_output),transpose_b=True,name="Attention_matmul")
     temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
