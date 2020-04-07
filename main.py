@@ -28,11 +28,11 @@ if gpus:
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
-bert_layer = hub.KerasLayer(url_uncased,
-                            trainable=True)
+bert_layer = hub.KerasLayer(url_uncased)
 vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
 do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
 tokenizer = FullTokenizer(vocab_file, do_lower_case)
+
 del bert_layer
 # del vocab_file
 # del do_lower_case
