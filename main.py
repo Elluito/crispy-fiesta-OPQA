@@ -11,6 +11,20 @@ import numpy as np
 import os
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
+gpus = tf.config.experimental.list_physical_devices('GPU')
+print(gpus)
+if gpus:
+    try:
+        # Currently, memory growth needs to be the same across GPUs
+        for gpu in gpus:
+            print("\n\nENTRE EN LAS GPUS IN PUSE SET MEMORY GROWTH TRUE")
+            tf.config.experimental.set_memory_growth(gpu, True)
+        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+    except RuntimeError as e:
+        # Memory growth must be set before GPUs have been initialized
+        print(e)
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/bert_en_uncased_L-24_H-1024_A-16/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
@@ -294,6 +308,8 @@ X_train=np.array(X_train)
 
 train_model(model,X_train,y_train,batch_size=3,epochs=3000)
 model.save("modelo_prueba.h5")
+
+metric_(X_test,y_test,y_pred)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
