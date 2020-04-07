@@ -157,7 +157,7 @@ def grad(model, inputs, targets):
     loss_value = loss(model, inputs, targets, training=True)
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
-def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
+def train_model(model,X,Y,log_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
     print("VCoy a empezar el entrenamiento")
@@ -196,8 +196,10 @@ def train_model(model,X,Y,batch_size=32,step_per_epoch=10,epochs=10):
         # train_accuracy_results_end.append(epoch_accuracy_end.result())
 
         # if epoch % 50 == 0:
+        f=open(log_name,"a")
         print("Epoch {:03d}: Loss: {:.3f}, Accuracy_for_start: {:.3%} ,  Accuracy_for_end: {:.3%}".format(epoch,epoch_loss_avg.result(),epoch_accuracy_start.result(),epoch_accuracy_end.result()))
-
+        f.write("Epoch {:03d}: Loss: {:.3f}, Accuracy_for_start: {:.3%} ,  Accuracy_for_end: {:.3%}\n".format(epoch,epoch_loss_avg.result(),epoch_accuracy_start.result(),epoch_accuracy_end.result()))
+        f.close()
 
 def build_model(max_seq_length = 512 ):
     question_input_word_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="questions_id")
@@ -305,10 +307,11 @@ X_train=np.array(X_train)
 #
 # prueba={"questions_id":np.array([cosa4.reshape(-1),cosa4.reshape(-1)]), "question_input_mask": np.array([cosa5.reshape(-1),cosa5.reshape(-1)]), "question_segment_id":np.array([cosa6.reshape(-1),cosa6.reshape(-1)]),"context_id": np.array([cosa1.reshape(-1),cosa1.reshape(-1)]), "context_input_mask":np.array([cosa2.reshape(-1),cosa2.reshape(-1)]), "context_segment_id":np.array([cosa3.reshape(-1),cosa3.reshape(-1)])}
 # prob_start,prob_end=model(prueba,training=True)
-
-train_model(model,X_train,y_train,batch_size=3,epochs=3000)
 import time
 t=time.time()
+log_name="Salida_modelo_{}.txt".format(t)
+train_model(model,X_train,y_train,batch_size=3,epochs=3000,log_name=log_name)
+
 model.save("modelo_prueba{}.h5".format(t))
 
 # metric_(X_test,y_test,y_pred)
