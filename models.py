@@ -3,7 +3,7 @@ import tensorflow_hub as hub
 import tensorflow as tf
 import  tensorflow.keras as keras
 from official.nlp.bert.tokenization import FullTokenizer
-from official.nlp.bert.bert_models import *
+# from official.nlp.bert.bert_models import *
 import numpy as np
 
 class MyDenseLayer(tf.keras.layers.Layer):
