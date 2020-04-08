@@ -203,6 +203,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
 
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_start(y[:, 1], y2)
+            print("Log_end: " + str(y2.numpy()))
         if epoch%10==0:
             model.save(model_name)
 
@@ -216,7 +217,9 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
         # if epoch % 50 == 0:
         f=open(log_name,"a")
         print("Epoch {:03d}: Loss: {:.3f}, Accuracy_for_start: {:.3%} ,  Accuracy_for_end: {:.3%}".format(epoch,epoch_loss_avg.result(),epoch_accuracy_start.result(),epoch_accuracy_end.result()))
+
         f.write("Epoch {:03d}: Loss: {:.3f}, Accuracy_for_start: {:.3%} ,  Accuracy_for_end: {:.3%}\n".format(epoch,epoch_loss_avg.result(),epoch_accuracy_start.result(),epoch_accuracy_end.result()))
+        f.write("Log_end: " + str(y2.numpy()))
         f.close()
 
 def build_model(max_seq_length = 512 ):
