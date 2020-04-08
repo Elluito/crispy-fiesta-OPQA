@@ -204,7 +204,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_start(y[:, 1], y2)
         if epoch%10==0:
-            model.save()
+            model.save(model_name)
 
 
 
