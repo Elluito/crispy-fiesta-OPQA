@@ -1,0 +1,2 @@
+Epoch 000: Loss: 11.713, Accuracy_for_start: 0.000% ,  Accuracy_for_end: 0.000%
+Epoch 001: Loss: 11.713, Accuracy_for_start: 0.000% ,  Accuracy_for_end: 0.000%

@@ -15,6 +15,7 @@ from guppy import hpy
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
 capacity=3000
@@ -24,7 +25,7 @@ if gpus:
         for gpu in gpus:
             print("\n\nENTRE EN LAS GPUS IN PUSE SET MEMORY GROWTH TRUE")
             tf.config.experimental.set_memory_growth(gpu, True)
-            tf.config.experimental.set_virtual_device_configuration(gpus[0],[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=capacity*0.8)])
+            # tf.config.experimental.set_virtual_device_configuration(gpus[0],[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=capacity*0.8)])
         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
     except RuntimeError as e:
@@ -33,7 +34,7 @@ if gpus:
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
-bert_layer = hub.KerasLayer(url_uncased)
+bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
 tokenizer = FullSentencePieceTokenizer(vocab_file)
 
@@ -144,27 +145,35 @@ def convert_sentences_to_features(sentences, tokenizer, max_seq_len=20):
 def loss(model, x, y, training):
   # training=training is needed only if there are layers with different
   # behavior during training versus inference (e.g. Dropout).
-    loss_object = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    loss_object1 = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    loss_object2 = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    # entrada_total={"questions_id": elem[3], "question_input_mask":elem[4], "question_segment_id": elem[5],"context_id": elem[0], "context_input_mask": elem[1], "context_segment_id":elem[2]}
+    # y_1=[]
+    # y_2=[]
+    # for elem in list(x):
+    #     entrada={"questions_id": elem[3], "question_input_mask":elem[4], "question_segment_id": elem[5],"context_id": elem[0], "context_input_mask": elem[1], "context_segment_id":elem[2]}
+    #     y1,y2 = model(entrada,training=True)
+    #     y_1.append(np.squeeze(y1))
+    #     y_2.append(np.squeeze(y2))
 
-    y_1=[]
-    y_2=[]
-    for elem in list(x):
-        entrada={"questions_id": elem[3], "question_input_mask":elem[4], "question_segment_id": elem[5],"context_id": elem[0], "context_input_mask": elem[1], "context_segment_id":elem[2]}
-        y1,y2 = model(entrada)
-        y_1.append(y1)
-        y_2.append(y2)
 
-    loss=loss_object(y_true=y[:,0], y_pred=y_1)+loss_object(y_true=y[:,0], y_pred=y_2)
+    entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
+           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
+           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 
-    return loss
+
+    y1, y2 = model(entrada, training=True)
+    loss=loss_object1(y_true=np.squeeze(y[:,0]), y_pred=y1)+loss_object2(y_true=np.squeeze(y[:,1]), y_pred=y2)
+
+    return loss,y1,y2
 
 def grad(model, inputs, targets):
   with tf.GradientTape() as tape:
-    loss_value = loss(model, inputs, targets, training=True)
-  return loss_value, tape.gradient(loss_value, model.trainable_variables)
+    loss_value,y1,y2 = loss(model, inputs, targets, training=True)
+  return loss_value, tape.gradient(loss_value, model.trainable_variables),y1,y2
 
-def train_model(model,path_to_features,log_name,batch_size=32,step_per_epoch=10,epochs=10):
-    optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
+def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_per_epoch=10,epochs=10):
+    optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.001)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
     print("VCoy a empezar el entrenamiento")
     for epoch in range(epochs):
@@ -177,23 +186,25 @@ def train_model(model,path_to_features,log_name,batch_size=32,step_per_epoch=10,
         for i in range(step_per_epoch):
             x,y=crear_batch(path_to_features,batch_size)
             # Optimize the model
-            with tf.device("GPU:0"):
-                loss_value, grads = grad(model, x, y)
-                optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-                # Track progress
-                epoch_loss_avg(loss_value)  # Add current batch loss
-                # Compare predicted label to actual label
-                # training=True is needed only if there are layers with different
-                # behavior during training versus inference (e.g. Dropout).
+            loss_value, grads,y1,y2 = grad(model, x, y)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-                entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
-                           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
-                           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
-                y1,y2= model(entrada, training=True)
+            # Track progress
+            epoch_loss_avg(loss_value)  # Add current batch loss
+            # Compare predicted label to actual label
+            # training=True is needed only if there are layers with different
+            # behavior during training versus inference (e.g. Dropout).
 
-                epoch_accuracy_start(y[:,0],y1)
-                epoch_accuracy_start(y[:, 1], y2)
+            # entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
+            #            "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
+            #            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
+            # y1,y2= model(entrada, training=True)
+
+            epoch_accuracy_start(y[:,0],y1)
+            epoch_accuracy_start(y[:, 1], y2)
+        if epoch%10==0:
+            model.save()
 
 
 
@@ -219,7 +230,7 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    bert_layer = hub.KerasLayer(url_uncased, trainable=True, name="Bert_model")
+    bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_variant_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
     # print(tf.shape(question_sequence_output))
@@ -278,15 +289,15 @@ def build_model(max_seq_length = 512 ):
     # optim=keras.optimizers.Adam(lr=0.0001)
     # model.compile(optimizer=optim,loss=log_loss_function)
 def crear_batch(path_to_features,batchsize=32):
-    os.chdir(path_to_features)
-    elems=len(glob.glob("X_*"))
+
+    elems=len(glob.glob(path_to_features+"X_*"))
     indice=int(np.random.randint(0,elems,1))
-    with open("X_{}".format(indice),"r+b") as f:
+    with open(path_to_features+"X_{}".format(indice),"r+b") as f:
         X= np.array(pickle.load(f))
-    with open("Y_{}".format(indice),"r+b") as f:
+    with open(path_to_features+"Y_{}".format(indice),"r+b") as f:
         Y= np.array(pickle.load(f))
     indices=np.random.randint(0,len(X),batchsize)
-    return X[indices,:],Y[indices]
+    return X[indices,:],Y[indices,:]
 
 
 
@@ -351,7 +362,7 @@ path= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
 import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
-train_model(model,path_to_features=path,batch_size=3,epochs=10,log_name=log_name)
+train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=10,log_name=log_name)
 #
 # model.save("modelo_prueba{}.h5".format(t))
 
@@ -367,4 +378,5 @@ train_model(model,path_to_features=path,batch_size=3,epochs=10,log_name=log_name
 # cosas =""
 # metric_(X_test,y_test,y_pred)
 #
+
 
