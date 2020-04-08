@@ -351,7 +351,7 @@ path= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
 import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
-train_model(model,path_to_features=path,batch_size=3,epochs=3000,log_name=log_name)
+train_model(model,path_to_features=path,batch_size=3,epochs=10,log_name=log_name)
 #
 # model.save("modelo_prueba{}.h5".format(t))
 
