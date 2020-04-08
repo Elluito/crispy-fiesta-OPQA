@@ -5,21 +5,26 @@ import  tensorflow.keras as keras
 from models import MyDenseLayer
 from tensorflow.keras.layers import LSTM
 from official.nlp.bert.tokenization import FullTokenizer,FullSentencePieceTokenizer
-from official.nlp.bert.bert_models import *
-from reading_datasets import read_dataset
+# from official.nlp.bert.bert_models import *
+from reading_datasets import read_dataset,serialize_example_features,tf_serialize_example_features,_parse_function
 import numpy as np
+import glob
 import os
+import pickle
+from guppy import hpy
 from  sklearn.model_selection import train_test_split
 tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
+capacity=3000
 if gpus:
     try:
         # Currently, memory growth needs to be the same across GPUs
         for gpu in gpus:
             print("\n\nENTRE EN LAS GPUS IN PUSE SET MEMORY GROWTH TRUE")
             tf.config.experimental.set_memory_growth(gpu, True)
+            tf.config.experimental.set_virtual_device_configuration(gpus[0],[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=capacity*0.8)])
         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
     except RuntimeError as e:
@@ -158,7 +163,7 @@ def grad(model, inputs, targets):
     loss_value = loss(model, inputs, targets, training=True)
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
-def train_model(model,X,Y,log_name,batch_size=32,step_per_epoch=10,epochs=10):
+def train_model(model,path_to_features,log_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.000121)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
     print("VCoy a empezar el entrenamiento")
@@ -170,7 +175,7 @@ def train_model(model,X,Y,log_name,batch_size=32,step_per_epoch=10,epochs=10):
         # Training loop - using batches of 32
 
         for i in range(step_per_epoch):
-            x,y=crear_batch(X,np.array(Y),batch_size)
+            x,y=crear_batch(path_to_features,batch_size)
             # Optimize the model
             with tf.device("GPU:0"):
                 loss_value, grads = grad(model, x, y)
@@ -223,7 +228,7 @@ def build_model(max_seq_length = 512 ):
     activation = keras.activations.elu
     substring=[i for i in url_uncased.split("_") if "H-" in i]
     if substring==[]:
-        dim=768
+        dim=128
     else:
         substring=substring[0]
         dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
@@ -272,9 +277,16 @@ def build_model(max_seq_length = 512 ):
     return model
     # optim=keras.optimizers.Adam(lr=0.0001)
     # model.compile(optimizer=optim,loss=log_loss_function)
-def crear_batch(X,y,batchsize=32):
+def crear_batch(path_to_features,batchsize=32):
+    os.chdir(path_to_features)
+    elems=len(glob.glob("X_*"))
+    indice=int(np.random.randint(0,elems,1))
+    with open("X_{}".format(indice),"r+b") as f:
+        X= np.array(pickle.load(f))
+    with open("Y_{}".format(indice),"r+b") as f:
+        Y= np.array(pickle.load(f))
     indices=np.random.randint(0,len(X),batchsize)
-    return X[indices,:],y[indices]
+    return X[indices,:],Y[indices]
 
 
 
@@ -291,34 +303,57 @@ def crear_batch(X,y,batchsize=32):
 # Later, when launching the model
 
 
-max_seq_length = 512 # Your choice here.
-mex_text_length=512*4
+max_seq_length = 350 # Your choice here.
+
 print("VOY A HACER EL MODELO")
 model=build_model(max_seq_length)
 
 print("YA HICE EL MODELO")
-# print(model.weights)
-# with tf.Session() as sess:
-#   # Run the init operation.
-#   sess.run(init_op)
-X,y,ids= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
 
 
-X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_size=0.1)
 
-N=len(X_train)
-X_train=np.array(X_train)
-# entrada=[X_train[0,0,0][:512].reshape(1,512),X_train[0,1,0][:512].reshape(1,512),X_train[0,2,0][:512].reshape(1,512),X_train[0,3,0][:512].reshape(1,512),X_train[0,4,0][:512].reshape(1,512),X_train[0,5,0][:512].reshape(1,512)]
-# cosa1,cosa2,cosa3,cosa4,cosa5,cosa6=X[0]
+
+# X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_size=0.1)
+
+# N=len(X_train)
+# X_train=np.array(X_train)
+# string=serialize_example_features(X[0][0],X[0][1],X[0][2],X[0][3],X[0][4],X[0][5])
+# example_proto = tf.train.Example.FromString(string)
 #
-# prueba={"questions_id":np.array([cosa4.reshape(-1),cosa4.reshape(-1)]), "question_input_mask": np.array([cosa5.reshape(-1),cosa5.reshape(-1)]), "question_segment_id":np.array([cosa6.reshape(-1),cosa6.reshape(-1)]),"context_id": np.array([cosa1.reshape(-1),cosa1.reshape(-1)]), "context_input_mask":np.array([cosa2.reshape(-1),cosa2.reshape(-1)]), "context_segment_id":np.array([cosa3.reshape(-1),cosa3.reshape(-1)])}
-# prob_start,prob_end=model(prueba,training=True)
+#
+# ########################  ASÍ SE RECUPERA EL FEATURE POR SI LO NECESITO MÁS TARDE##############################
+# # list(example_proto.features.feature["question_id"].int64_list.value)
+# ###############################################################################################################
+# #
+# print(string)
+
+# print(features_dataset)
+# serialized_features_dataset = features_dataset.map(tf_serialize_example_features)
+# # print(serialized_features_dataset)
+# #
+# filename = 'x_test.tfrecord'
+# writer = tf.data.experimental.TFRecordWriter(filename)
+# writer.write(serialized_features_dataset)
+# writer.close()
+# filenames = [filename]
+# train_dataset=tf.data.TFRecordDataset('x_test.tfrecord').batch(32)
+# for serialized_example in train_dataset:
+#     for elem in serialized_example
+#         example = tf.train.Example()
+#         example.ParseFromString(elem)
+#         x_1 = np.array(example.features.feature['X'].float_list.value)
+#         y_1 = np.array(example.features.feature['Y'].float_list.value)
+#         break
+#
+
+path= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
+#
 import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
-train_model(model,X_train,y_train,batch_size=3,epochs=3000,log_name=log_name)
-
-model.save("modelo_prueba{}.h5".format(t))
+train_model(model,path_to_features=path,batch_size=3,epochs=3000,log_name=log_name)
+#
+# model.save("modelo_prueba{}.h5".format(t))
 
 # metric_(X_test,y_test,y_pred)
 # X_test_= np.array(X_test)
