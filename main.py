@@ -189,6 +189,8 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             # Optimize the model
 
             loss_value1,loss_value2, grads,y1,y2 = grad(model, x, y)
+            print("Le gradientes")
+            print(grads)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
             # optimizer.apply_gradients(zip(grads2, model.trainable_variables))
 
