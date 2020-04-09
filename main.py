@@ -163,14 +163,14 @@ def loss(model, x, y, training):
 
 
     y1, y2 = model(entrada, training=True)
-    loss=loss_object1(y_true=np.squeeze(y[:,0]), y_pred=y1)+loss_object2(y_true=np.squeeze(y[:,1]), y_pred=y2)
-
-    return loss,y1,y2
+    loss1=loss_object1(y_true=np.squeeze(y[:,0]), y_pred=y1)
+    loss2 = loss_object2(y_true=np.squeeze(y[:,1]), y_pred=y2)
+    return  loss1,loss2,y1,y2
 
 def grad(model, inputs, targets):
-  with tf.GradientTape() as tape:
-    loss_value,y1,y2 = loss(model, inputs, targets, training=True)
-  return loss_value, tape.gradient(loss_value, model.trainable_variables),y1,y2
+  with tf.GradientTape(persistent=True) as tape:
+    loss_value1,loss_value2,y1,y2 = loss(model, inputs, targets, training=True)
+  return loss_value1,loss_value2, tape.gradient(loss_value1, model.trainable_variables),tape.gradient(loss_value2, model.trainable_variables),y1,y2
 
 def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.001)
@@ -178,7 +178,8 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
     print("VCoy a empezar el entrenamiento")
     for epoch in range(epochs):
 
-        epoch_loss_avg = tf.keras.metrics.Mean()
+        epoch_loss_avg1 = tf.keras.metrics.Mean()
+        epoch_loss_avg2 = tf.keras.metrics.Mean()
         epoch_accuracy_start = tf.keras.metrics.CategoricalAccuracy()
         epoch_accuracy_end = tf.keras.metrics.CategoricalAccuracy()
         # Training loop - using batches of 32
@@ -187,11 +188,13 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             x,y=crear_batch(path_to_features,batch_size)
             # Optimize the model
 
-            loss_value, grads,y1,y2 = grad(model, x, y)
-            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            loss_value1,loss_value2, grads1,grads2,y1,y2 = grad(model, x, y)
+            optimizer.apply_gradients(zip(grads1, model.trainable_variables))
+            optimizer.apply_gradients(zip(grads2, model.trainable_variables))
 
             # Track progress
-            epoch_loss_avg(loss_value)  # Add current batch loss
+            epoch_loss_avg1(loss_value1)  # Add current batch loss
+            epoch_loss_avg2(loss_value2)  # Add current batch loss
             # Compare predicted label to actual label
             # training=True is needed only if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
