@@ -168,9 +168,9 @@ def loss(model, x, y, training):
     return  loss1,loss2,y1,y2
 
 def grad(model, inputs, targets):
-  with tf.GradientTape(persistent=True) as tape:
+  with tf.GradientTape() as tape:
     loss_value1,loss_value2,y1,y2 = loss(model, inputs, targets, training=True)
-  return loss_value1,loss_value2, tape.gradient(loss_value1, model.trainable_variables),tape.gradient(loss_value2, model.trainable_variables),y1,y2
+  return loss_value1,loss_value2, tape.gradient([loss_value1,loss_value2],model.trainable_variables),y1,y2
 
 def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.001)
@@ -188,9 +188,9 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             x,y=crear_batch(path_to_features,batch_size)
             # Optimize the model
 
-            loss_value1,loss_value2, grads1,grads2,y1,y2 = grad(model, x, y)
-            optimizer.apply_gradients(zip(grads1, model.trainable_variables))
-            optimizer.apply_gradients(zip(grads2, model.trainable_variables))
+            loss_value1,loss_value2, grads,y1,y2 = grad(model, x, y)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            # optimizer.apply_gradients(zip(grads2, model.trainable_variables))
 
             # Track progress
             epoch_loss_avg1(loss_value1)  # Add current batch loss
