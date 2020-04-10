@@ -32,13 +32,18 @@ if gpus:
         # Memory growth must be set before GPUs have been initialized
         print(e)
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-url_uncased="https://tfhub.dev/google/albert_base/3"
-# url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
-url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
+# url_uncased="https://tfhub.dev/google/albert_base/3"
+url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
+# url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 
 vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
 tokenizer = FullSentencePieceTokenizer(vocab_file)
+
+# vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+# do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+# tokenizer = FullTokenizer(vocab_file, do_lower_case)
+
 
 del bert_layer
 # del vocab_file
@@ -164,7 +169,7 @@ def loss(model, x, y, training):
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 
 
-    y1, y2 = model(entrada, training=True)
+    y1, y2 = model(entrada)
     loss1=loss_object1(y_true=np.squeeze(y[:,0]), y_pred=y1)
     loss2 = loss_object2(y_true=np.squeeze(y[:,1]), y_pred=y2)
     return  loss1,loss2,y1,y2
@@ -241,7 +246,7 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_variant_model")
+    bert_layer = hub.KerasLayer(url_uncased, name="Bert_variant_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
     # print(tf.shape(question_sequence_output))
