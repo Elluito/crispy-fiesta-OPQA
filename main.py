@@ -47,7 +47,7 @@ tokenizer = FullTokenizer(vocab_file, do_lower_case)
 
 
 del bert_layer
-
+tf.compat.v1.disable_eager_execution()
 # del vocab_file
 # del do_lower_case
 #
@@ -198,8 +198,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             # Optimize the model
 
             loss_value1,loss_value2, grads,y1,y2 = grad(model, x, y)
-            print("Loss value ")
-            print()
+
             # print(grads)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
             # optimizer.apply_gradients(zip(grads2, model.trainable_variables))
@@ -314,11 +313,15 @@ def build_model(max_seq_length = 512 ):
     logits_for_end = tf.math.log(soft_max_end,name="log_end")
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[logits_for_end, logits_for_start],name="Luis_net")
 
-    model.build(input_shape=[None,None])
+    # model.build(input_shape=[None,None])
+    optim=keras.optimizers.Adam(lr=0.001)
+    model.compile(optimizer=optim,loss=[tf.losses.CategoricalCrossentropy,tf.losses.CategoricalCrossentropy])
     model.summary()
+
+
+
     return model
-    # optim=keras.optimizers.Adam(lr=0.0001)
-    # model.compile(optimizer=optim,loss=log_loss_function)
+
 def crear_batch(path_to_features,batchsize=32):
 
     elems=len(glob.glob(path_to_features+"X_*"))
@@ -393,7 +396,13 @@ path= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
 import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
-train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
+x,y=crear_batch(path,2)
+entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
+           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
+           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
+salida=[y[:,0].y[:,1]]
+model.fit(entrada,salida)
+# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
 # model.save("modelo_prueba{}.h5".format(t))
 
