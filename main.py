@@ -1,18 +1,18 @@
-import tensorflow_hub as hub
-
-import tensorflow as tf
-import  tensorflow.keras as keras
-from models import MyDenseLayer
-from tensorflow.keras.layers import LSTM
-from official.nlp.bert.tokenization import FullTokenizer,FullSentencePieceTokenizer
-# from official.nlp.bert.bert_models import *
-from reading_datasets import read_dataset,serialize_example_features,tf_serialize_example_features,_parse_function
-import numpy as np
 import glob
 import os
 import pickle
-from guppy import hpy
-from  sklearn.model_selection import train_test_split
+
+import numpy as np
+import tensorflow as tf
+import tensorflow.keras as keras
+import tensorflow_hub as hub
+from official.nlp.bert.tokenization import FullSentencePieceTokenizer
+from tensorflow.keras.layers import LSTM
+
+# from official.nlp.bert.bert_models import *
+from reading_datasets import read_dataset
+
+print(tf.__version__)
 tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -175,7 +175,7 @@ def grad(model, inputs, targets):
 def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.001)
     # train_dataset =tf.data.Dataset.from_tensor_slices((X,Y)).batch(batch_size=batch_size).repeat().shuffle(1000)
-    print("VCoy a empezar el entrenamiento")
+    print("Voy a empezar el entrenamiento")
     for epoch in range(epochs):
 
         epoch_loss_avg1 = tf.keras.metrics.Mean()
@@ -189,8 +189,9 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             # Optimize the model
 
             loss_value1,loss_value2, grads,y1,y2 = grad(model, x, y)
-            print("Le gradientes")
-            print(grads)
+            print("Loss value ")
+            print()
+            # print(grads)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
             # optimizer.apply_gradients(zip(grads2, model.trainable_variables))
 
