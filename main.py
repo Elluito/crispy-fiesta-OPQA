@@ -6,11 +6,9 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
-from official.nlp.bert.tokenization import FullSentencePieceTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
-from reading_datasets import read_dataset
 
 print(tf.__version__)
 tf.compat.v1.enable_eager_execution()
@@ -32,9 +30,11 @@ if gpus:
         # Memory growth must be set before GPUs have been initialized
         print(e)
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
+url_uncased="https://tfhub.dev/google/albert_base/3"
+# url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
 url="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
+if
 vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
 tokenizer = FullSentencePieceTokenizer(vocab_file)
 
