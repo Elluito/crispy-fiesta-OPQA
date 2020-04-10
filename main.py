@@ -6,16 +6,17 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
-from official.nlp.bert.tokenization import FullSentencePieceTokenizer
+from official.nlp.bert.tokenization import FullTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
 
 print(tf.__version__)
+
 tf.compat.v1.enable_eager_execution()
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
 capacity=3000
@@ -33,19 +34,20 @@ if gpus:
         print(e)
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 # url_uncased="https://tfhub.dev/google/albert_base/3"
-url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
-# url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
+# url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
+url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 
-vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
-tokenizer = FullSentencePieceTokenizer(vocab_file)
+# vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
+# tokenizer = FullSentencePieceTokenizer(vocab_file)
 
-# vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-# do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-# tokenizer = FullTokenizer(vocab_file, do_lower_case)
+vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+tokenizer = FullTokenizer(vocab_file, do_lower_case)
 
 
 del bert_layer
+
 # del vocab_file
 # del do_lower_case
 #
@@ -244,14 +246,27 @@ def build_model(max_seq_length = 512 ):
     context_input_mask = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_input_mask")
     context_segment_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_segment_id")
 
-
+    # albert_inputs1 = dict(
+    #     input_ids=question_input_word_ids,
+    #     input_mask=question_input_mask,
+    #     segment_ids=question_segment_ids)
+    # albert_outputs = albert_module(albert_inputs1, signature="tokens", as_dict=True)
+    # # question_pooled_output = albert_outputs["pooled_output"]
+    # question_sequence_output = albert_outputs["sequence_output"]
+    #
+    # albert_inputs2 = dict(
+    #     input_ids=context_input_word_ids,
+    #     input_mask=context_input_mask,
+    #     segment_ids=context_segment_ids)
+    # albert_outputs = albert_module(albert_inputs2, signature="tokens", as_dict=True)
+    # context_sequence_output = albert_outputs["sequence_output"]
 
     bert_layer = hub.KerasLayer(url_uncased, name="Bert_variant_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
-    # print(tf.shape(question_sequence_output))
+
     context_pooled_output, context_sequence_output = bert_layer([context_input_word_ids, context_input_mask, context_segment_ids])
-    # print(tf.shape(context_sequence_output))
+
     activation = keras.activations.elu
     substring=[i for i in url_uncased.split("_") if "H-" in i]
     if substring==[]:
