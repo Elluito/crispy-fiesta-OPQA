@@ -292,12 +292,12 @@ def build_model(max_seq_length = 512 ):
     output_start=tf.reshape(output_for_start,[-1,max_seq_length,128])
     # _,out=tf.shape(output_start).numpy()
 
-    W1 = tf.keras.backend.variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_start")
+    W1 = tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_start")
     # W1 = init_weights(128,1)
     output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    W2=tf.keras.backend.variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_end")
+    W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
     # W2 =init_weights(128,1)
     print(W2)
 
@@ -317,7 +317,7 @@ def build_model(max_seq_length = 512 ):
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.001)
-    model.compile(optimizer=optim,loss=[tf.losses.CategoricalCrossentropy,tf.losses.CategoricalCrossentropy])
+    model.compile(optimizer=optim,loss=[tf.keras.losses.CategoricalCrossentropy(from_logits=True),tf.keras.losses.CategoricalCrossentropy(from_logits=True)])
     model.summary()
 
 
