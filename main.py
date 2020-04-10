@@ -1,5 +1,4 @@
 import glob
-import os
 import pickle
 
 import numpy as np
@@ -15,7 +14,7 @@ from reading_datasets import read_dataset
 print(tf.__version__)
 
 tf.compat.v1.enable_eager_execution()
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 # os.environ["CUDA_VISIBLE_DEVICES"]="0"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
@@ -32,7 +31,7 @@ if gpus:
     except RuntimeError as e:
         # Memory growth must be set before GPUs have been initialized
         print(e)
-#os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+
 # url_uncased="https://tfhub.dev/google/albert_base/3"
 # url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
 url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
@@ -293,11 +292,14 @@ def build_model(max_seq_length = 512 ):
     output_start=tf.reshape(output_for_start,[-1,max_seq_length,128])
     # _,out=tf.shape(output_start).numpy()
 
-    W1 = tf.Variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_start")
+    W1 = tf.keras.backend.variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_start")
+    # W1 = init_weights(128,1)
     output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    W2=tf.Variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_end")
+    W2=tf.keras.backend.variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_end")
+    # W2 =init_weights(128,1)
+    print(W2)
 
 
     temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
@@ -351,7 +353,7 @@ def crear_batch(path_to_features,batchsize=32):
 max_seq_length = 350 # Your choice here.
 
 print("VOY A HACER EL MODELO")
-keras.backend.get_session().run(tf.global_variables_initializer())
+keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
 model=build_model(max_seq_length)
 
 print("YA HICE EL MODELO")
