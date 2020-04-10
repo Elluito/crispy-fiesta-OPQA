@@ -294,11 +294,11 @@ def build_model(max_seq_length = 512 ):
     output_start=tf.reshape(output_for_start,[-1,max_seq_length,128])
     # _,out=tf.shape(output_start).numpy()
 
-    W1 = tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_start")
+    W1 = tf.Variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_start")
     output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
+    W2=tf.Variable(init_weights(128,1),trainable=True,dtype=tf.float32,name="weights_for_end")
 
 
     temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
