@@ -276,7 +276,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                 text = cosa["context"]
                                 C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
                                 text_tokens = tokenizer.tokenize(text)
-                                if len(text_tokens)>512:
+                                if len(text_tokens)>max_seq_length:
                                     continue
                                 for question in cosa["qas"]:
                                     unique_id = question["id"]
