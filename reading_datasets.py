@@ -1,14 +1,9 @@
-import numpy as np
-import tensorflow as tf
-import pandas as pd
 import json
+import os
 import pickle
 
-import os
-
-
-
-
+import numpy as np
+import tensorflow as tf
 
 PATH_TO_SQUAD="datasets/Squad/"
 PATH_TO_NARRATIVEQA_SHORT="datasets/NARRATIVEQA/"
@@ -44,148 +39,293 @@ def convert_sentence_to_features(sentence, tokenizer, max_seq_len):
     return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
 
 
-def read_dataset(dataset="squad",mode="test",tokenizer=None,max_seq_length=512):
+def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_seq_length=512):
 
 
 
     if dataset=="squad":
         if mode=="test":
-            i=0
-            if not os.listdir(PATH_TO_SQUAD+"test"):
+            if fragmented:
+                i=0
+                if not os.listdir(PATH_TO_SQUAD+"test"):
 
 
-                ids=[]
-                X=[]
-                y=[]
-                f=open(PATH_TO_SQUAD+"dev-v1.1.json","r",encoding="utf8")
-                for line in f:
-                    temas=json.loads(line)["data"]
-                    for temp in temas:
-                        for cosa in temp["paragraphs"]:
-                            text = cosa["context"]
-                            C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
-                            text_tokens = tokenizer.tokenize(text)
-                            if len(text_tokens)>max_seq_length:
-                                continue
-                            for question in cosa["qas"]:
-                                unique_id = question["id"]
-                                ids.append(unique_id)
-                                for ans in question["answers"]:
-                                    try:
-                                        text_answer_list = ans["text"].split()
-                                        first_word = tokenizer.tokenize(text_answer_list[0])[0]
-                                        last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                        first_index =text_tokens.index(first_word)
-                                        last_index=text_tokens.index(last_word)
-                                    except:
-                                        continue
+                    ids=[]
+                    X=[]
+                    y=[]
+                    f=open(PATH_TO_SQUAD+"dev-v1.1.json","r",encoding="utf8")
+                    for line in f:
+                        temas=json.loads(line)["data"]
+                        for temp in temas:
+                            for cosa in temp["paragraphs"]:
+                                text = cosa["context"]
+                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+                                text_tokens = tokenizer.tokenize(text)
+                                if len(text_tokens)>max_seq_length:
+                                    continue
+                                for question in cosa["qas"]:
+                                    unique_id = question["id"]
+                                    ids.append(unique_id)
+                                    for ans in question["answers"]:
+                                        try:
+                                            text_answer_list = ans["text"].split()
+                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
+                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
+                                            first_index =text_tokens.index(first_word)
+                                            last_index=text_tokens.index(last_word)
+                                        except:
+                                            continue
 
-                                Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
-                                temp_y_start=np.zeros(max_seq_length)
-                                temp_y_start[first_index]=1
-                                temp_y_end= np.zeros(max_seq_length)
-                                temp_y_end[last_index]=1
-                                # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
-                                X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                y.append([temp_y_start,temp_y_start])
+                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
+                                    temp_y_start=np.zeros(max_seq_length)
+                                    temp_y_start[first_index]=1
+                                    temp_y_end= np.zeros(max_seq_length)
+                                    temp_y_end[last_index]=1
+                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                    X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
+                                    y.append([temp_y_start,temp_y_start])
 
-                                if np.array(X).itemsize*np.array(X).size>1000000:
-                                    with open(PATH_TO_SQUAD+"test/"+"X_{}".format(i),"w+b")as f:
-                                        pickle.dump(X,f)
-                                    with open(PATH_TO_SQUAD+"test/"+"Y_{}".format(i),"w+b")as f:
-                                        pickle.dump(y,f)
-                                    with open(PATH_TO_SQUAD+"test/"+"ids_{}".format(i),"w+b")as f:
-                                        pickle.dump(ids,f)
-                                    i+=1
-                                    X=[]
-                                    y=[]
-                                    ids=[]
-                # X=np.array(X)
-                # y=np.array(y)
-                # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
+                                    if np.array(X).itemsize*np.array(X).size>1000000:
+                                        with open(PATH_TO_SQUAD+"test/"+"X_{}".format(i),"w+b")as f:
+                                            pickle.dump(X,f)
+                                        with open(PATH_TO_SQUAD+"test/"+"Y_{}".format(i),"w+b")as f:
+                                            pickle.dump(y,f)
+                                        with open(PATH_TO_SQUAD+"test/"+"ids_{}".format(i),"w+b")as f:
+                                            pickle.dump(ids,f)
+                                        i+=1
+                                        X=[]
+                                        y=[]
+                                        ids=[]
+                    # X=np.array(X)
+                    # y=np.array(y)
+                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
 
-                return PATH_TO_SQUAD+"test/"
+                    return PATH_TO_SQUAD+"test/"
+                else:
+
+                    # x_reader = open(PATH_TO_SQUAD + "X_test", "r+b")
+                    # y_reader = open(PATH_TO_SQUAD + "Y_test", "r+b")
+                    # ids_reader = open(PATH_TO_SQUAD + "ids_test", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_SQUAD+"test/"
             else:
+                if not os.listdir(PATH_TO_SQUAD + "test"):
+                    ids = []
+                    X = []
+                    y = []
+                    f = open(PATH_TO_SQUAD + "dev-v1.1.json", "r", encoding="utf8")
+                    for line in f:
+                        temas = json.loads(line)["data"]
+                        for temp in temas:
+                            for cosa in temp["paragraphs"]:
+                                text = cosa["context"]
+                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+                                text_tokens = tokenizer.tokenize(text)
+                                if len(text_tokens) > max_seq_length:
+                                    continue
+                                for question in cosa["qas"]:
+                                    unique_id = question["id"]
+                                    ids.append(unique_id)
+                                    for ans in question["answers"]:
+                                        try:
+                                            text_answer_list = ans["text"].split()
+                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
+                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
+                                            first_index = text_tokens.index(first_word)
+                                            last_index = text_tokens.index(last_word)
+                                        except:
+                                            continue
 
-                # x_reader = open(PATH_TO_SQUAD + "X_test", "r+b")
-                # y_reader = open(PATH_TO_SQUAD + "Y_test", "r+b")
-                # ids_reader = open(PATH_TO_SQUAD + "ids_test", "r+b")
-                #
-                # X=pickle.load(x_reader)
-                # y=pickle.load(y_reader)
-                # ids=pickle.load(ids_reader)
-                # x_reader.close()
-                # y_reader.close()
-                # ids_reader.close()
-                return PATH_TO_SQUAD+"test/"
+                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,
+                                                                                           max_seq_length)
+                                    temp_y_start = np.zeros(max_seq_length)
+                                    temp_y_start[first_index] = 1
+                                    temp_y_end = np.zeros(max_seq_length)
+                                    temp_y_end[last_index] = 1
+                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
+                                    y.append([temp_y_start, temp_y_start])
+
+                                    # if np.array(X).itemsize * np.array(X).size > 1000000:
+                                    #     with open(PATH_TO_SQUAD + "test/" + "X_{}".format(i), "w+b")as f:
+                                    #         pickle.dump(X, f)
+                                    #     with open(PATH_TO_SQUAD + "test/" + "Y_{}".format(i), "w+b")as f:
+                                    #         pickle.dump(y, f)
+                                    #     with open(PATH_TO_SQUAD + "test/" + "ids_{}".format(i), "w+b")as f:
+                                    #         pickle.dump(ids, f)
+                                    #     i += 1
+                                    #     X = []
+                                    #     y = []
+                                    #     ids = []
+                    # X=np.array(X)
+                    # y=np.array(y)
+                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
+                        with open(PATH_TO_SQUAD + "test/" + "X", "w+b")as f:
+                            pickle.dump(X, f)
+                        with open(PATH_TO_SQUAD + "test/" + "Y", "w+b")as f:
+                            pickle.dump(y, f)
+                        with open(PATH_TO_SQUAD + "test/" + "ids", "w+b")as f:
+                            pickle.dump(ids, f)
+
+                    return PATH_TO_SQUAD + "test/"
+                else:
+
+                    x_reader = open(PATH_TO_SQUAD + "test/" + "X", "r+b")
+                    y_reader = open(PATH_TO_SQUAD + "test/" +"Y", "r+b")
+                    ids_reader = open(PATH_TO_SQUAD + "test/" +"ids", "r+b")
+
+                    X=pickle.load(x_reader)
+                    y=pickle.load(y_reader)
+                    ids=pickle.load(ids_reader)
+                    x_reader.close()
+                    y_reader.close()
+                    ids_reader.close()
+                    return PATH_TO_SQUAD + "test/"
 
 
 
         elif mode=="train":
-            if not   os.path.exists(PATH_TO_SQUAD+"X_train") and not os.path.exists(PATH_TO_SQUAD+"Y_train") and  not os.path.exists(PATH_TO_SQUAD+"ids_train"):
+            if fragmented:
+                i = 0
+                if not os.listdir(PATH_TO_SQUAD + "test"):
 
+                    ids = []
+                    X = []
+                    y = []
+                    f = open(PATH_TO_SQUAD + "dev-v1.1.json", "r", encoding="utf8")
+                    for line in f:
+                        temas = json.loads(line)["data"]
+                        for temp in temas:
+                            for cosa in temp["paragraphs"]:
+                                text = cosa["context"]
+                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+                                text_tokens = tokenizer.tokenize(text)
+                                if len(text_tokens) > max_seq_length:
+                                    continue
+                                for question in cosa["qas"]:
+                                    unique_id = question["id"]
+                                    ids.append(unique_id)
+                                    for ans in question["answers"]:
+                                        try:
+                                            text_answer_list = ans["text"].split()
+                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
+                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
+                                            first_index = text_tokens.index(first_word)
+                                            last_index = text_tokens.index(last_word)
+                                        except:
+                                            continue
 
-                ids=[]
-                X=[]
-                y=[]
-                f=open(PATH_TO_SQUAD+"train-v1.1.json","r",encoding="utf8")
-                for line in f:
-                    temas=json.loads(line)["data"]
-                    for temp in temas:
-                        for cosa in temp["paragraphs"]:
-                            text = cosa["context"]
-                            C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
-                            text_tokens = tokenizer.tokenize(text)
-                            if len(text_tokens)>512:
-                                continue
-                            for question in cosa["qas"]:
-                                unique_id = question["id"]
-                                ids.append(unique_id)
-                                for ans in question["answers"]:
-                                    try:
-                                        text_answer_list = ans["text"].split()
-                                        first_word = tokenizer.tokenize(text_answer_list[0])[0]
-                                        last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                        first_index =text_tokens.index(first_word)
-                                        last_index=text_tokens.index(last_word)
-                                    except:
-                                        continue
+                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"],
+                                                                                           tokenizer, max_seq_length)
+                                    temp_y_start = np.zeros(max_seq_length)
+                                    temp_y_start[first_index] = 1
+                                    temp_y_end = np.zeros(max_seq_length)
+                                    temp_y_end[last_index] = 1
+                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
+                                    y.append([temp_y_start, temp_y_start])
 
-                                Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
-                                temp_y_start=np.zeros(max_seq_length)
-                                temp_y_start[first_index]=1
-                                temp_y_end= np.zeros(max_seq_length)
-                                temp_y_end[last_index]=1
-                                # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
-                                X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                y.append([temp_y_start,temp_y_start])
-                # X=np.array(X)
-                # y=np.array(y)
-                # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
-                x_writer=open(PATH_TO_SQUAD+"X_train","w+b")
-                y_writer=open(PATH_TO_SQUAD+"Y_train","w+b")
-                ids_writer = open(PATH_TO_SQUAD + "ids_train", "w+b")
+                                    if np.array(X).itemsize * np.array(X).size > 1000000:
+                                        with open(PATH_TO_SQUAD + "train/" + "X_{}".format(i), "w+b")as f:
+                                            pickle.dump(X, f)
+                                        with open(PATH_TO_SQUAD + "train/" + "Y_{}".format(i), "w+b")as f:
+                                            pickle.dump(y, f)
+                                        with open(PATH_TO_SQUAD + "train/" + "ids_{}".format(i), "w+b")as f:
+                                            pickle.dump(ids, f)
+                                        i += 1
+                                        X = []
+                                        y = []
+                                        ids = []
+                    # X=np.array(X)
+                    # y=np.array(y)
+                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
 
-                pickle.dump(X,x_writer)
-                pickle.dump(y,y_writer)
-                pickle.dump(ids, ids_writer)
-                x_writer.close()
-                y_writer.close()
-                ids_writer.close()
-                return X,y,ids
+                    return PATH_TO_SQUAD + "test/"
+                else:
+
+                    # x_reader = open(PATH_TO_SQUAD + "X_test", "r+b")
+                    # y_reader = open(PATH_TO_SQUAD + "Y_test", "r+b")
+                    # ids_reader = open(PATH_TO_SQUAD + "ids_test", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_SQUAD + "test/"
+
             else:
+                if not   os.path.exists(PATH_TO_SQUAD+"train/"+"X") and not os.path.exists(PATH_TO_SQUAD+"train/"+"Y") and  not os.path.exists(PATH_TO_SQUAD+"train/"+"ids"):
 
-                x_reader = open(PATH_TO_SQUAD + "X_train", "r+b")
-                y_reader = open(PATH_TO_SQUAD + "Y_train", "r+b")
-                ids_reader = open(PATH_TO_SQUAD + "ids_train", "r+b")
 
-                X=pickle.load(x_reader)
-                y=pickle.load(y_reader)
-                ids=pickle.load(ids_reader)
-                x_reader.close()
-                y_reader.close()
-                ids_reader.close()
-                return X, y, ids
+                    ids=[]
+                    X=[]
+                    y=[]
+                    f=open(PATH_TO_SQUAD+"train-v1.1.json","r",encoding="utf8")
+                    for line in f:
+                        temas=json.loads(line)["data"]
+                        for temp in temas:
+                            for cosa in temp["paragraphs"]:
+                                text = cosa["context"]
+                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+                                text_tokens = tokenizer.tokenize(text)
+                                if len(text_tokens)>512:
+                                    continue
+                                for question in cosa["qas"]:
+                                    unique_id = question["id"]
+                                    ids.append(unique_id)
+                                    for ans in question["answers"]:
+                                        try:
+                                            text_answer_list = ans["text"].split()
+                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
+                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
+                                            first_index =text_tokens.index(first_word)
+                                            last_index=text_tokens.index(last_word)
+                                        except:
+                                            continue
+
+                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
+                                    temp_y_start=np.zeros(max_seq_length)
+                                    temp_y_start[first_index]=1
+                                    temp_y_end= np.zeros(max_seq_length)
+                                    temp_y_end[last_index]=1
+                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                    X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
+                                    y.append([temp_y_start,temp_y_start])
+                    # X=np.array(X)
+                    # y=np.array(y)
+                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
+                    x_writer=open(PATH_TO_SQUAD+"train/"+"X","w+b")
+                    y_writer=open(PATH_TO_SQUAD+"train/"+"Y","w+b")
+                    ids_writer = open(PATH_TO_SQUAD+"train/" + "ids", "w+b")
+
+                    pickle.dump(X,x_writer)
+                    pickle.dump(y,y_writer)
+                    pickle.dump(ids, ids_writer)
+                    x_writer.close()
+                    y_writer.close()
+                    ids_writer.close()
+                    return PATH_TO_SQUAD+"train/"
+                else:
+
+                    # x_reader = open(PATH_TO_SQUAD +"train/"+ "X", "r+b")
+                    # y_reader = open(PATH_TO_SQUAD +"train/"+ "Y", "r+b")
+                    # ids_reader = open(PATH_TO_SQUAD +"train/"+ "ids", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_SQUAD+"train/"
 
 
 

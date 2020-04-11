@@ -317,24 +317,31 @@ def build_model(max_seq_length = 512 ):
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.001)
-    model.compile(optimizer=optim,loss=[tf.keras.losses.CategoricalCrossentropy(from_logits=True),tf.keras.losses.CategoricalCrossentropy(from_logits=True)])
+    model.compile(optimizer=optim,loss=[tf.keras.losses.CategoricalCrossentropy(from_logits=True),tf.keras.losses.CategoricalCrossentropy(from_logits=True)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
 
     return model
 
-def crear_batch(path_to_features,batchsize=32):
+def crear_batch(path_to_features,fragmented=False,batchsize=32):
+    if fragmented:
+        elems=len(glob.glob(path_to_features+"X_*"))
+        indice=int(np.random.randint(0,elems,1))
+        with open(path_to_features+"X_{}".format(indice),"r+b") as f:
+            X= np.array(pickle.load(f))
+        with open(path_to_features+"Y_{}".format(indice),"r+b") as f:
+            Y= np.array(pickle.load(f))
+        indices=np.random.randint(0,len(X),batchsize)
+        return X[indices,:],Y[indices,:]
+    else:
 
-    elems=len(glob.glob(path_to_features+"X_*"))
-    indice=int(np.random.randint(0,elems,1))
-    with open(path_to_features+"X_{}".format(indice),"r+b") as f:
-        X= np.array(pickle.load(f))
-    with open(path_to_features+"Y_{}".format(indice),"r+b") as f:
-        Y= np.array(pickle.load(f))
-    indices=np.random.randint(0,len(X),batchsize)
-    return X[indices,:],Y[indices,:]
+        with open(path_to_features + "X", "r+b") as f:
+            X = np.array(pickle.load(f))
+        with open(path_to_features + "Y", "r+b") as f:
+            Y = np.array(pickle.load(f))
 
+        return X, Y
 
 
 
@@ -350,7 +357,7 @@ def crear_batch(path_to_features,batchsize=32):
 # Later, when launching the model
 
 
-max_seq_length = 350 # Your choice here.
+max_seq_length = 350# Your choice here.
 
 print("VOY A HACER EL MODELO")
 keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
@@ -394,17 +401,20 @@ print("YA HICE EL MODELO")
 #         break
 #
 
-path= read_dataset(tokenizer=tokenizer,max_seq_length=max_seq_length)
+path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 #
 import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
-x,y=crear_batch(path,100)
+x,y=crear_batch(path,fragmented=False)
 entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
            "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 salida=[y[:,0],y[:,1]]
-model.fit(entrada,salida,batch_size=3)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model")
+tensor_callback=keras.callbacks.TensorBoard("logs",histogram_freq=1)
+model.fit(entrada,salida,batch_size=3,validation_split=0.1,epochs=10000,callbacks=[model_callback,tensor_callback])
+
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
 # model.save("modelo_prueba{}.h5".format(t))
