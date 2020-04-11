@@ -412,7 +412,7 @@ entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeez
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 salida=[y[:,0],y[:,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model")
-tensor_callback=keras.callbacks.TensorBoard("logs",histogram_freq=1)
+tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=3)
 model.fit(entrada,salida,batch_size=3,validation_split=0.1,epochs=10000,callbacks=[model_callback,tensor_callback])
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
