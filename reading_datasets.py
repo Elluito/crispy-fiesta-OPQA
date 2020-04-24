@@ -83,7 +83,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_end[last_index]=1
                                     # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
                                     X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                    y.append([temp_y_start,temp_y_start])
+                                    y.append([temp_y_start,temp_y_end])
 
                                     if np.array(X).itemsize*np.array(X).size>1000000:
                                         with open(PATH_TO_SQUAD+"test/"+"X_{}".format(i),"w+b")as f:
@@ -150,7 +150,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_end[last_index] = 1
                                     # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
                                     X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
-                                    y.append([temp_y_start, temp_y_start])
+                                    y.append([temp_y_start, temp_y_end])
 
                                     # if np.array(X).itemsize * np.array(X).size > 1000000:
                                     #     with open(PATH_TO_SQUAD + "test/" + "X_{}".format(i), "w+b")as f:
@@ -175,17 +175,17 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
 
                     return PATH_TO_SQUAD + "test/"
                 else:
+                    #
+                    # x_reader = open(PATH_TO_SQUAD + "test/" + "X", "r+b")
+                    # y_reader = open(PATH_TO_SQUAD + "test/" +"Y", "r+b")
+                    # ids_reader = open(PATH_TO_SQUAD + "test/" +"ids", "r+b")
 
-                    x_reader = open(PATH_TO_SQUAD + "test/" + "X", "r+b")
-                    y_reader = open(PATH_TO_SQUAD + "test/" +"Y", "r+b")
-                    ids_reader = open(PATH_TO_SQUAD + "test/" +"ids", "r+b")
-
-                    X=pickle.load(x_reader)
-                    y=pickle.load(y_reader)
-                    ids=pickle.load(ids_reader)
-                    x_reader.close()
-                    y_reader.close()
-                    ids_reader.close()
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
                     return PATH_TO_SQUAD + "test/"
 
 
@@ -198,7 +198,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                     ids = []
                     X = []
                     y = []
-                    f = open(PATH_TO_SQUAD + "dev-v1.1.json", "r", encoding="utf8")
+                    f = open(PATH_TO_SQUAD + "train-v1.1.json", "r", encoding="utf8")
                     for line in f:
                         temas = json.loads(line)["data"]
                         for temp in temas:
@@ -229,7 +229,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_end[last_index] = 1
                                     # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
                                     X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
-                                    y.append([temp_y_start, temp_y_start])
+                                    y.append([temp_y_start, temp_y_end])
 
                                     if np.array(X).itemsize * np.array(X).size > 1000000:
                                         with open(PATH_TO_SQUAD + "train/" + "X_{}".format(i), "w+b")as f:
@@ -298,7 +298,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_end[last_index]=1
                                     # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
                                     X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                    y.append([temp_y_start,temp_y_start])
+                                    y.append([temp_y_start,temp_y_end])
                     # X=np.array(X)
                     # y=np.array(y)
                     # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}

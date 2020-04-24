@@ -52,26 +52,30 @@ tf.compat.v1.disable_eager_execution()
 #
 # vocab_file=b'C:\\Users\\LUISAL~1\\AppData\\Local\\Temp\\tfhub_modules\\88ac13afec2955fd14396e4582c251841b67429a\\assets\\vocab.txt'
 # tokenizer = FullTokenizer(vocab_file)
-def metric_(X,y_true,y_pred):
+def metric_(X,y_true,y_start,y_end):
     promedio_desempeno=0
     i=0
-    for features,true_index,pred_index in zip(X,y_true,y_pred):
-        questions_ids=features[3]
-        questions_tokens=tokenizer.convert_ids_to_tokens(questions_ids)
-        context_tokens=tokenizer.convert_ids_to_tokens(features[0])
-        true_ini=np.argmax(true_index[0])
-        true_end=np.argmax(true_index[1])
-        pred_ini=np.argmax(pred_index[0])
-        pred_end=np.argmax(pred_index[1])
-        A=set(range(true_ini,true_end))
-        B=set(range(pred_ini,pred_end))
-        jaccard_index=len(A.intersection(B))/len(A.union(B))
-        promedio_desempeno+= (jaccard_index-promedio_desempeno)/i
+    N=X.shape[0]
+    y_true=np.array(y_true)
+    for index in range(N):
+        features =X[index,:]
+        true_index =y_true[i]
+        questions_ids = features[3]
+        questions_tokens = tokenizer.convert_ids_to_tokens(questions_ids)
+        context_tokens = tokenizer.convert_ids_to_tokens(features[0])
+        true_ini = np.argmax(true_index[0])
+        true_end = np.argmax(true_index[1])
+        pred_ini = np.argmax(y_start[i,:])
+        pred_end = np.argmax(y_end[i,:])
+        A = set(range(true_ini,true_end))
+        B = set(range(pred_ini,pred_end))
+        jaccard_index = len(A.intersection(B))/len(A.union(B))
+        promedio_desempeno += (jaccard_index-promedio_desempeno)/i
         i+=1
         s=""
         for tok in questions_tokens:
             s+ tok+" "
-        print("Question:{} True answer: {}     Predicted_answer: {}       Jaccard: {}".format(s,context_tokens[true_ini:true_end],context_tokens[true_ini:true_end],jaccard_index))
+        print("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}".format(s,context_tokens[true_ini:true_end],context_tokens[true_ini:true_end],jaccard_index))
 
 
     print("Performance promedio {}".format(promedio_desempeno))
@@ -299,7 +303,7 @@ def build_model(max_seq_length = 512 ):
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
     W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
     # W2 =init_weights(128,1)
-    print(W2)
+
 
 
     temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
@@ -313,7 +317,7 @@ def build_model(max_seq_length = 512 ):
 
     logits_for_start = tf.math.log(soft_max_start,name="log_start")
     logits_for_end = tf.math.log(soft_max_end,name="log_end")
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[logits_for_end, logits_for_start],name="Luis_net")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.001)
@@ -360,6 +364,7 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 max_seq_length = 350# Your choice here.
 
 print("VOY A HACER EL MODELO")
+# model=build_model(max_seq_length)
 keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
 model=build_model(max_seq_length)
 
@@ -411,15 +416,27 @@ entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeez
            "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 salida=[y[:,0],y[:,1]]
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model")
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-start_val{val_tf_op_layer_log_start_accuracy:.4f}-end_val{val_tf_op_layer_log_end_accuracy:.4f}.hdf5",save_best_only=True)
 tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=3)
-model.fit(entrada,salida,batch_size=3,validation_split=0.1,epochs=10000,callbacks=[model_callback,tensor_callback])
+early_callback_end=tf.keras.callbacks.EarlyStopping(
+    monitor="val_tf_op_layer_log_end_accuracy", patience=3, verbose=0, mode='auto', restore_best_weights=True
+)
+early_callback_start=tf.keras.callbacks.EarlyStopping(
+    monitor="val_tf_op_layer_log_start_accuracy", patience=3, verbose=0, mode='auto', restore_best_weights=True
+)
+
+model.fit(entrada,salida,batch_size=4,validation_split=0.1,epochs=7,callbacks=[model_callback,tensor_callback,early_callback_end,early_callback_start])
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
-# model.save("modelo_prueba{}.h5".format(t))
-
-# metric_(X_test,y_test,y_pred)
+model.save_weights("modelo_prueba{}.hdf5".format(t))
+path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+X_test,y_test=crear_batch(path,fragmented=False)
+entrada = {"questions_id": np.squeeze(X_test[:, 3]), "question_input_mask": np.squeeze(X_test[:, 4]),
+           "question_segment_id": np.squeeze(X_test[:, 5]), "context_id": np.squeeze(X_test[:, 0]),
+           "context_input_mask": np.squeeze(X_test[:, 1]), "context_segment_id": np.squeeze(X_test[:, 2])}
+y_start,y_end=model.predict(entrada)
+metric_(X_test,y_test,y_start,y_end)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
