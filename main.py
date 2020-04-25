@@ -412,11 +412,11 @@ import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
 x,y=crear_batch(path,fragmented=False)
-entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
-           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
-           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
+entrada = {"questions_id": np.squeeze(x[:10, 3]), "question_input_mask": np.squeeze(x[:10, 4]),
+           "question_segment_id": np.squeeze(x[:10, 5]), "context_id": np.squeeze(x[:10, 0]),
+           "context_input_mask": np.squeeze(x[:10, 1]), "context_segment_id": np.squeeze(x[:10, 2])}
 salida=[y[:,0],y[:,1]]
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-start_val{val_loss:.4f}.hdf5",save_best_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
 tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=3)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -427,7 +427,7 @@ model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=4,callbacks=[m
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
-model.save_weights("modelo_prueba{}.hdf5".format(t))
+# model.save_weights("modelo_prueba{}.hdf5".format(t))
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test=crear_batch(path,fragmented=False)
 entrada = {"questions_id": np.squeeze(X_test[:, 3]), "question_input_mask": np.squeeze(X_test[:, 4]),
