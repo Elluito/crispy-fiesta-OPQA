@@ -416,16 +416,14 @@ entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeez
            "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 salida=[y[:,0],y[:,1]]
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-start_val{val_tf_op_layer_log_start_accuracy:.4f}-end_val{val_tf_op_layer_log_end_accuracy:.4f}.hdf5",save_best_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-start_val{val_loss:.4f}.hdf5",save_best_only=True)
 tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=3)
-early_callback_end=tf.keras.callbacks.EarlyStopping(
-    monitor="val_tf_op_layer_log_end_accuracy", patience=3, verbose=0, mode='auto', restore_best_weights=True
-)
+
 early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_tf_op_layer_log_start_accuracy", patience=3, verbose=0, mode='auto', restore_best_weights=True
+    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 
-model.fit(entrada,salida,batch_size=4,validation_split=0.1,epochs=7,callbacks=[model_callback,tensor_callback,early_callback_end,early_callback_start])
+model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=4,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
