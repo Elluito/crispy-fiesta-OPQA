@@ -417,7 +417,7 @@ entrada = {"questions_id": np.squeeze(x[:10, 3]), "question_input_mask": np.sque
            "context_input_mask": np.squeeze(x[:10, 1]), "context_segment_id": np.squeeze(x[:10, 2])}
 salida=[y[:,0],y[:,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
-tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=3)
+tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
