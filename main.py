@@ -71,7 +71,7 @@ def metric_(X,y_true,y_start,y_end):
         A = set(range(true_ini,true_end))
         B = set(range(pred_ini,pred_end))
         jaccard_index = len(A.intersection(B))/len(A.union(B))
-        promedio_desempeno += (jaccard_index-promedio_desempeno)/i
+        promedio_desempeno += (jaccard_index-promedio_desempeno)/(i+1)
         i+=1
         s=""
         for tok in questions_tokens:
