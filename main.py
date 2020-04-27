@@ -86,6 +86,7 @@ def metric_(X,y_true,y_start,y_end):
 
 
     f.write("\nPerformance promedio {}".format(promedio_desempeno))
+    f.close()
 
 
 
