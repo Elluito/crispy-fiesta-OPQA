@@ -60,7 +60,7 @@ def metric_(X,y_true,y_start,y_end):
     for index in range(N):
         features = X[index,:]
         true_index = y_true[i]
-        questions_ids = features[3]
+        questions_ids = features[3][0]
         print(questions_ids)
         questions_tokens = tokenizer.convert_ids_to_tokens(list(questions_ids))
         context_tokens = tokenizer.convert_ids_to_tokens(features[0])
