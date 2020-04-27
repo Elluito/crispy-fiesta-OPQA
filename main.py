@@ -58,10 +58,10 @@ def metric_(X,y_true,y_start,y_end):
     N=X.shape[0]
     y_true=np.array(y_true)
     for index in range(N):
-        features =X[index,:]
-        true_index =y_true[i]
+        features = X[index,:]
+        true_index = y_true[i]
         questions_ids = features[3]
-        questions_tokens = tokenizer.convert_ids_to_tokens(questions_ids)
+        questions_tokens = tokenizer.convert_ids_to_tokens(list(questions_ids))
         context_tokens = tokenizer.convert_ids_to_tokens(features[0])
         true_ini = np.argmax(true_index[0])
         true_end = np.argmax(true_index[1])
