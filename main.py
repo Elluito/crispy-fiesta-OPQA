@@ -70,7 +70,12 @@ def metric_(X,y_true,y_start,y_end):
         pred_end = np.argmax(y_end[i,:])
         A = set(range(true_ini,true_end))
         B = set(range(pred_ini,pred_end))
-        jaccard_index = len(A.intersection(B))/len(A.union(B))
+        denominator = len(A.union(B))
+        if denominator==0:
+            jaccard_index = 0
+        else:
+            jaccard_index = len(A.intersection(B))/len(A.union(B))
+
         promedio_desempeno += (jaccard_index-promedio_desempeno)/(i+1)
         i+=1
         s=""
