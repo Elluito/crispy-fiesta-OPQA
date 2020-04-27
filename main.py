@@ -57,6 +57,7 @@ def metric_(X,y_true,y_start,y_end):
     i=0
     N=X.shape[0]
     y_true=np.array(y_true)
+    f = open("Salida_modelo.txt","w")
     for index in range(N):
         features = X[index,:]
         true_index = y_true[i]
@@ -81,10 +82,10 @@ def metric_(X,y_true,y_start,y_end):
         s=""
         for tok in questions_tokens:
             s+ tok+" "
-        print("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}".format(s,context_tokens[true_ini:true_end],context_tokens[pred_ini:pred_end],jaccard_index))
+        f.write("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}  \n".format(s,context_tokens[true_ini:true_end],context_tokens[pred_ini:pred_end],jaccard_index))
 
 
-    print("Performance promedio {}".format(promedio_desempeno))
+    f.write("\nPerformance promedio {}".format(promedio_desempeno))
 
 
 
