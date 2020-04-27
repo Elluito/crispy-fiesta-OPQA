@@ -61,7 +61,7 @@ def metric_(X,y_true,y_start,y_end):
         features = X[index,:]
         true_index = y_true[i]
         questions_ids = features[3][0]
-        print(questions_ids)
+
         questions_tokens = tokenizer.convert_ids_to_tokens(list(questions_ids))
         context_tokens = tokenizer.convert_ids_to_tokens(list(features[0][0]))
         true_ini = np.argmax(true_index[0])
