@@ -415,7 +415,7 @@ x,y=crear_batch(path,fragmented=False)
 entrada = {"questions_id": np.squeeze(x[:10, 3]), "question_input_mask": np.squeeze(x[:10, 4]),
            "question_segment_id": np.squeeze(x[:10, 5]), "context_id": np.squeeze(x[:10, 0]),
            "context_input_mask": np.squeeze(x[:10, 1]), "context_segment_id": np.squeeze(x[:10, 2])}
-salida=[y[:,0],y[:,1]]
+salida=[y[:10,0],y[:10,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
 tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
