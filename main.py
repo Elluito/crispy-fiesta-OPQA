@@ -76,7 +76,7 @@ def metric_(X,y_true,y_start,y_end):
         s=""
         for tok in questions_tokens:
             s+ tok+" "
-        print("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}".format(s,context_tokens[true_ini:true_end],context_tokens[true_ini:true_end],jaccard_index))
+        print("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}".format(s,context_tokens[true_ini:true_end],context_tokens[pred_ini:pred_end],jaccard_index))
 
 
     print("Performance promedio {}".format(promedio_desempeno))
