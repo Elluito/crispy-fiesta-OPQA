@@ -355,8 +355,20 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 
         return X, Y
 
+def mk_input_function(path):
+
+    def input_fn(batch_size=16):
+        """An input_fn to parse 28x28 images from filename using tf.data."""
 
 
+        X,y =crear_batch(path,fragmented=False)
+        prob_dataset = tf.data.Dataset.from_tensor_slices((X,y))
+
+        batchd_prob = prob_dataset.batch(batch_size, drop_remainder=True).shuffle(10000)
+        # batchd_prob =batchd_prob.cache()
+        return batchd_prob
+
+    return  input_fn
 
 # natural_questions_dataset_path ="D:\datsets_tesis\Kaggle_competition\Tensorflow_Q_and_A_competition/"
 
@@ -367,14 +379,28 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 # init_op = tf.initialize_all_variables()
 
 # Later, when launching the model
+use_TPUS=False
+strategy= None
+if use_TPUS:
+    TPU_WORKER = 'grpc://10.240.1.2:8470'
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=TPU_WORKER)
+    tf.config.experimental_connect_to_cluster(resolver)
+    tf.tpu.experimental.initialize_tpu_system(resolver)
+    strategy = tf.distribute.experimental.TPUStrategy(resolver)
+else:
+    strategy = tf.distribute.MirroredStrategy()
 
+BATCH_SIZE_PER_REPLICA = 5
+BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
 
 max_seq_length = 350# Your choice here.
 
 print("VOY A HACER EL MODELO")
 # model=build_model(max_seq_length)
-keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
-model=build_model(max_seq_length)
+with strategy.scope():
+
+    keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
+    model=build_model(max_seq_length)
 
 print("YA HICE EL MODELO")
 
@@ -431,11 +457,12 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 
-model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=2,callbacks=[model_callback,early_callback_start],verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=2,callbacks=[model_callback,early_callback_start],verbose=1)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
+# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
 # X_test,y_test = X_test[:10,:],y_test[:10,:]
