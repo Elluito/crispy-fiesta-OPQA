@@ -81,7 +81,7 @@ def metric_(X,y_true,y_start,y_end):
         i+=1
         s=""
         for tok in questions_tokens:
-            s+ tok+" "
+            s+=tok+" "
         f.write("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}  \n".format(s,context_tokens[true_ini:true_end],context_tokens[pred_ini:pred_end],jaccard_index))
 
 
@@ -425,13 +425,13 @@ entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeez
            "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
 salida=[y[:,0],y[:,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
-tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
+# tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
-
-model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=2,callbacks=[model_callback,early_callback_start],verbose=2)
+model.load_weights("local_model/model_e4-val_loss11.6985.hdf5")
+# model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
 #
@@ -443,6 +443,14 @@ entrada = {"questions_id": np.squeeze(X_test[:, 3]), "question_input_mask": np.s
            "question_segment_id": np.squeeze(X_test[:, 5]), "context_id": np.squeeze(X_test[:, 0]),
            "context_input_mask": np.squeeze(X_test[:, 1]), "context_segment_id": np.squeeze(X_test[:, 2])}
 y_start,y_end=model.predict(entrada)
+
+with open("y_pred_end","w+b") as f :
+    pickle.dump(y_end,f)
+with open("y_pred_start","w+b") as f :
+    pickle.dump(y_start,f)
+
+
+
 metric_(X_test,y_test,y_start,y_end)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
