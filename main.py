@@ -18,7 +18,7 @@ tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="0"
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
-capacity=3000
+# capacity=3000
 if gpus:
     try:
         # Currently, memory growth needs to be the same across GPUs
@@ -229,7 +229,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_end(y[:, 1], y2)
             # print("Log_end: " + str(y2.numpy()))
-        if epoch%10==0:
+        if epoch%10 == 0:
             model.save(model_name)
 
 
