@@ -81,6 +81,7 @@ def metric_(X,y_true,y_start,y_end):
         i+=1
         s=""
         for tok in questions_tokens:
+            if tok!="[PAD]" and tok!="[SEP]":
             s+=tok+" "
         f.write("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}  \n".format(s,context_tokens[true_ini:true_end+1],context_tokens[pred_ini:pred_end+1],jaccard_index))
 
@@ -431,9 +432,9 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-# model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=,callbacks=[model_callback,early_callback_start],verbose=2)
+model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=5,callbacks=[model_callback,early_callback_start],verbose=2)
 
-# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=3,epochs=1,log_name=log_name)
+# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)

@@ -390,7 +390,7 @@ if use_TPUS:
 else:
     strategy = tf.distribute.MirroredStrategy()
 
-BATCH_SIZE_PER_REPLICA = 5
+BATCH_SIZE_PER_REPLICA = 32
 BATCH_SIZE = BATCH_SIZE_PER_REPLICA * strategy.num_replicas_in_sync
 
 max_seq_length = 350# Your choice here.

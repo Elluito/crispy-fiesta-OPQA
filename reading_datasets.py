@@ -286,8 +286,8 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                             text_answer_list = ans["text"].split()
                                             first_word = tokenizer.tokenize(text_answer_list[0])[0]
                                             last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                            first_index =text_tokens.index(first_word)
-                                            last_index=text_tokens.index(last_word)
+                                            first_index = text_tokens.index(first_word)
+                                            last_index = text_tokens.index(last_word)
                                         except:
                                             continue
 
