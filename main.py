@@ -82,7 +82,7 @@ def metric_(X,y_true,y_start,y_end):
         s=""
         for tok in questions_tokens:
             if tok!="[PAD]" and tok!="[SEP]":
-            s+=tok+" "
+                s+=tok+" "
         f.write("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}  \n".format(s,context_tokens[true_ini:true_end+1],context_tokens[pred_ini:pred_end+1],jaccard_index))
 
 
