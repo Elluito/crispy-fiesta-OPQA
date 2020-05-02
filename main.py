@@ -33,8 +33,8 @@ if gpus:
         print(e)
 
 # url_uncased="https://tfhub.dev/google/albert_base/3"
-# url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
-url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
+url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
+# url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 
 # vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
@@ -421,18 +421,18 @@ import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
 x,y=crear_batch(path,fragmented=False)
-entrada = {"questions_id": np.squeeze(x[:, 3]), "question_input_mask": np.squeeze(x[:, 4]),
-           "question_segment_id": np.squeeze(x[:, 5]), "context_id": np.squeeze(x[:, 0]),
-           "context_input_mask": np.squeeze(x[:, 1]), "context_segment_id": np.squeeze(x[:, 2])}
-salida=[y[:,0],y[:,1]]
+entrada = {"questions_id": np.squeeze(x[:5000, 3]), "question_input_mask": np.squeeze(x[:5000, 4]),
+           "question_segment_id": np.squeeze(x[:5000, 5]), "context_id": np.squeeze(x[:5000, 0]),
+           "context_input_mask": np.squeeze(x[:5000, 1]), "context_segment_id": np.squeeze(x[:5000, 2])}
+salida=[y[:5000,0],y[:5000,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
-model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=5,callbacks=[model_callback,early_callback_start],verbose=2)
+# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
+model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=5,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
@@ -440,9 +440,9 @@ model.fit(entrada,salida,batch_size=5,validation_split=0.1,epochs=5,callbacks=[m
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
 # X_test,y_test = X_test[:10,:],y_test[:10,:]
-entrada = {"questions_id": np.squeeze(X_test[:, 3]), "question_input_mask": np.squeeze(X_test[:, 4]),
-           "question_segment_id": np.squeeze(X_test[:, 5]), "context_id": np.squeeze(X_test[:, 0]),
-           "context_input_mask": np.squeeze(X_test[:, 1]), "context_segment_id": np.squeeze(X_test[:, 2])}
+entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
+           "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
+           "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
 y_start,y_end=model.predict(entrada)
 
 with open("y_pred_end","w+b") as f :
