@@ -432,7 +432,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=5,callbacks=[model_callback,early_callback_start],verbose=2)
+model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
@@ -452,7 +452,7 @@ with open("y_pred_start","w+b") as f :
 
 
 
-metric_(X_test,y_test,y_start,y_end)
+metric_(X_test,y_test[:2000],y_start,y_end)
 # X_test_= np.array(X_test)
 # X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
 # X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
