@@ -291,7 +291,7 @@ def build_model(max_seq_length = 512 ):
 
     temp = tf.math.softmax(temp)
     new_representation =tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
-
+    new_representation = keras.layers.BatchNormalization()(new_representation)
     layer_encoder = keras.layers.Bidirectional(LSTM(128, return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='ave')
 
     layer_decoder = keras.layers.Bidirectional(LSTM(128, return_sequences=True, input_shape=(max_seq_length, 128)), merge_mode='ave')
