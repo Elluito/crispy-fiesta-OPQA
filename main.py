@@ -300,7 +300,7 @@ def build_model(max_seq_length = 512 ):
     # encoder_state_c = ecoder_state_c_forth + ecoder_state_c_back
     # encoder_state_h = ecoder_state_h_forth + ecoder_state_h_back
     # encoder_state = [encoder_state_h, encoder_state_c]
-    output_for_end = layer_decoder(output_for_start)
+    output_for_end = layer_decoder(new_representation)
 
     output_start=tf.reshape(output_for_start,[-1,max_seq_length,128])
     # _,out=tf.shape(output_start).numpy()
@@ -329,7 +329,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.001)
+    optim=keras.optimizers.Adam(lr=0.00001)
     model.compile(optimizer=optim,loss=[tf.keras.losses.CategoricalCrossentropy(from_logits=True),tf.keras.losses.CategoricalCrossentropy(from_logits=True)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
