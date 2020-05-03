@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
-from official.nlp.bert.tokenization import FullTokenizer
+from official.nlp.bert.tokenization import FullSentencePieceTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
@@ -37,12 +37,12 @@ url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
 # url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 
-# vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
-# tokenizer = FullSentencePieceTokenizer(vocab_file)
-
-vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-tokenizer = FullTokenizer(vocab_file, do_lower_case)
+vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
+tokenizer = FullSentencePieceTokenizer(vocab_file)
+#
+# vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+# do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+# tokenizer = FullTokenizer(vocab_file, do_lower_case)
 
 
 del bert_layer
