@@ -299,10 +299,10 @@ def build_model(max_seq_length = 512 ):
     layer_decoder_start= keras.layers.Bidirectional(LSTM(1, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='sum')
 
     layer_encoder_end = keras.layers.Bidirectional(
-        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='ave')
+        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
 
     layer_decoder_end = keras.layers.Bidirectional(
-        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='ave')
+        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='sum')
 
     mid_start  = layer_encoder_start(new_representation)
     # encoder_state_c = ecoder_state_c_forth + ecoder_state_c_back
@@ -332,8 +332,8 @@ def build_model(max_seq_length = 512 ):
     # temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
     # temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
     
-    soft_max_start = tf.nn.softmax(temp_start)
-    soft_max_end = tf.nn.softmax(temp_end)
+
+
 
     # soft_max_start=tf.reshape(soft_max_start,[-1,max_seq_length],name="start_output")
     # soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
