@@ -39,6 +39,7 @@ bert_layer = hub.KerasLayer(url_uncased,trainable=False)
 
 vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
 tokenizer = FullSentencePieceTokenizer(vocab_file)
+print(tokenizer.convert_tokens_to_ids([102,1205,367]))
 #
 # vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
 # do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
@@ -317,6 +318,7 @@ def build_model(max_seq_length = 512 ):
 
     temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
     temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
+    
     soft_max_start = tf.nn.softmax(temp_start)
     soft_max_end = tf.nn.softmax(temp_end)
 
