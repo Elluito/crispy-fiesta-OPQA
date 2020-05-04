@@ -62,7 +62,7 @@ def metric_(X,y_true,y_start,y_end):
         features = X[index,:]
         true_index = y_true[i]
         questions_ids = features[3][0]
-
+        print(questions_ids)
         questions_tokens = tokenizer.convert_ids_to_tokens(list(questions_ids))
         context_tokens = tokenizer.convert_ids_to_tokens(list(features[0][0]))
         true_ini = np.argmax(true_index[0])
@@ -329,13 +329,19 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.00001)
-    model.compile(optimizer=optim,loss=[tf.keras.losses.CategoricalCrossentropy(from_logits=True),tf.keras.losses.CategoricalCrossentropy(from_logits=True)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
+    optim=keras.optimizers.Adam(lr=0.00005)
+    model.compile(optimizer=optim,loss=[custom_metric,custom_metric],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
 
     return model
+@tf.function
+def custom_metric(y_true,y_pred):
+    multpli = tf.multiply(y_true,y_pred)
+    result =keras.backend.sum(multpli)
+    return result
+
 
 def crear_batch(path_to_features,fragmented=False,batchsize=32):
     if fragmented:
@@ -421,10 +427,11 @@ import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
 x,y=crear_batch(path,fragmented=False)
-entrada = {"questions_id": np.squeeze(x[:5000, 3]), "question_input_mask": np.squeeze(x[:5000, 4]),
-           "question_segment_id": np.squeeze(x[:5000, 5]), "context_id": np.squeeze(x[:5000, 0]),
-           "context_input_mask": np.squeeze(x[:5000, 1]), "context_segment_id": np.squeeze(x[:5000, 2])}
-salida=[y[:5000,0],y[:5000,1]]
+
+entrada = {"questions_id": np.squeeze(x[:2000, 3]), "question_input_mask": np.squeeze(x[:2000, 4]),
+           "question_segment_id": np.squeeze(x[:2000, 5]), "context_id": np.squeeze(x[:2000, 0]),
+           "context_input_mask": np.squeeze(x[:2000, 1]), "context_segment_id": np.squeeze(x[:2000, 2])}
+salida=[y[:2000,0],y[:2000,1]]
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
