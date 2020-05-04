@@ -395,7 +395,7 @@ max_seq_length = 350# Your choice here.
 
 print("VOY A HACER EL MODELO")
 
-keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
+# keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
 model=build_model(max_seq_length)
 
 print("YA HICE EL MODELO")
