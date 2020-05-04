@@ -339,7 +339,7 @@ def build_model(max_seq_length = 512 ):
 @tf.function
 def custom_metric(y_true,y_pred):
     multpli = tf.multiply(y_true,y_pred)
-    result =keras.backend.sum(multpli)
+    result = -keras.backend.sum(multpli)
     return result
 
 
