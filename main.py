@@ -274,7 +274,7 @@ def build_model(max_seq_length = 512 ):
     # albert_outputs = albert_module(albert_inputs2, signature="tokens", as_dict=True)
     # context_sequence_output = albert_outputs["sequence_output"]
 
-    bert_layer = hub.KerasLayer(url_uncased,trainable=True, name="Bert_variant_model")
+    bert_layer = hub.KerasLayer(url_uncased,trainable=False, name="Bert_variant_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
 
