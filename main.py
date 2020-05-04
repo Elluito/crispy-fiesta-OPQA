@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
-from official.nlp.bert.tokenization import FullSentencePieceTokenizer
+from official.nlp.bert.tokenization import FullTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
@@ -33,21 +33,22 @@ if gpus:
         print(e)
 
 # url_uncased="https://tfhub.dev/google/albert_base/3"
-url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
-# url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
+# url_uncased= "https://tfhub.dev/tensorflow/albert_en_base/1"
+url_uncased="https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
 bert_layer = hub.KerasLayer(url_uncased,trainable=False)
-
-vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
-tokenizer = FullSentencePieceTokenizer(vocab_file)
-print(tokenizer.convert_tokens_to_ids([102,1205,367]))
 #
-# vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-# do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-# tokenizer = FullTokenizer(vocab_file, do_lower_case)
+# vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
+# tokenizer = FullSentencePieceTokenizer(vocab_file)
+# print(tokenizer.convert_tokens_to_ids([102,1205,367]))
+#
+vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+tokenizer = FullTokenizer(vocab_file)
+
 
 
 del bert_layer
-tf.compat.v1.disable_eager_execution()
+
 # del vocab_file
 # del do_lower_case
 #
@@ -64,7 +65,7 @@ def metric_(X,y_true,y_start,y_end):
         true_index = y_true[i]
         questions_ids = features[3][0]
         print(questions_ids)
-        questions_tokens = tokenizer.convert_ids_to_tokens(list(questions_ids))
+        questions_tokens = tokenizer.convert_ids_to_tokens(questions_ids)
         context_tokens = tokenizer.convert_ids_to_tokens(list(features[0][0]))
         true_ini = np.argmax(true_index[0])
         true_end = np.argmax(true_index[1])
@@ -273,7 +274,7 @@ def build_model(max_seq_length = 512 ):
     # albert_outputs = albert_module(albert_inputs2, signature="tokens", as_dict=True)
     # context_sequence_output = albert_outputs["sequence_output"]
 
-    bert_layer = hub.KerasLayer(url_uncased, name="Bert_variant_model")
+    bert_layer = hub.KerasLayer(url_uncased,trainable=True, name="Bert_variant_model")
 
     question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
 
@@ -293,31 +294,43 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.softmax(temp)
     new_representation =tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
     new_representation = keras.layers.BatchNormalization()(new_representation)
-    layer_encoder = keras.layers.Bidirectional(LSTM(128, return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='ave')
+    layer_encoder_start = keras.layers.Bidirectional(LSTM(1,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
 
-    layer_decoder = keras.layers.Bidirectional(LSTM(128, return_sequences=True, input_shape=(max_seq_length, 128)), merge_mode='ave')
+    layer_decoder_start= keras.layers.Bidirectional(LSTM(1, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='sum')
 
-    output_for_start = layer_encoder(new_representation)
+    layer_encoder_end = keras.layers.Bidirectional(
+        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='ave')
+
+    layer_decoder_end = keras.layers.Bidirectional(
+        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='ave')
+
+    mid_start  = layer_encoder_start(new_representation)
     # encoder_state_c = ecoder_state_c_forth + ecoder_state_c_back
     # encoder_state_h = ecoder_state_h_forth + ecoder_state_h_back
     # encoder_state = [encoder_state_h, encoder_state_c]
-    output_for_end = layer_decoder(new_representation)
+    output_for_start = layer_decoder_start(mid_start)
+    mid_end = layer_encoder_end(new_representation)
+    output_for_end = layer_decoder_end(mid_end)
 
-    output_start=tf.reshape(output_for_start,[-1,max_seq_length,128])
+    output_start = tf.reshape(output_for_start,[-1,max_seq_length])
+    output_end = tf.reshape(output_for_end,[-1,max_seq_length])
+    soft_max_start =keras.layers.Softmax()(output_start)
+    soft_max_end = keras.layers.Softmax()(output_end)
+
     # _,out=tf.shape(output_start).numpy()
 
-    W1 = tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_start")
+    # W1 = tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_start")
     # W1 = init_weights(128,1)
-    output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
+    # output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
+    # W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
     # W2 =init_weights(128,1)
 
 
-
-    temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
-    temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
+    #
+    # temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
+    # temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
     
     soft_max_start = tf.nn.softmax(temp_start)
     soft_max_end = tf.nn.softmax(temp_end)
@@ -381,7 +394,7 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 max_seq_length = 350# Your choice here.
 
 print("VOY A HACER EL MODELO")
-# model=build_model(max_seq_length)
+
 keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
 model=build_model(max_seq_length)
 
