@@ -447,44 +447,39 @@ entrada = {"questions_id": np.squeeze(x[:2000, 3]), "question_input_mask": np.sq
            "question_segment_id": np.squeeze(x[:2000, 5]), "context_id": np.squeeze(x[:2000, 0]),
            "context_input_mask": np.squeeze(x[:2000, 1]), "context_segment_id": np.squeeze(x[:2000, 2])}
 salida=[y[:2000,0],y[:2000,1]]
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
-# tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
-early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
-)
-# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
+# entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
+#            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
+#            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
+y_start,y_end = model.predict(entrada)
 
-# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+
 #
-# model.save_weights("modelo_prueba{}.hdf5".format(t))
-path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-X_test,y_test = crear_batch(path,fragmented=False)
-# X_test,y_test = X_test[:10,:],y_test[:10,:]
-entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
-           "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
-           "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
-y_start,y_end=model.predict(entrada)
-
-with open("y_pred_end","w+b") as f :
-    pickle.dump(y_end,f)
-with open("y_pred_start","w+b") as f :
-    pickle.dump(y_start,f)
-
-
-
-metric_(X_test,y_test[:2000],y_start,y_end)
-# X_test_= np.array(X_test)
-# X_train = {"questions_id": X_train[:,3].reshape(-1,max_seq_length), "question_input_mask": X_train[:,4].reshape(-1,max_seq_length), "question_segment_id": X_train[:,5].reshape(-1,max_seq_length),"context_id": X_train[:,0].reshape(-1,max_seq_length), "context_input_mask": X_train[:,1].reshape(-1,max_seq_length), "context_segment_id": X_train[:,2].reshape(-1,max_seq_length)}
-# X_test_pre ={"questions_id": X_test_[:,3].reshape(-1,max_seq_length), "question_input_mask": X_test_[:,4].reshape(-1,max_seq_length), "question_segment_id": X_test_[:,5].reshape(-1,max_seq_length),"context_id": X_test_[:,0].reshape(-1,max_seq_length), "context_input_mask": X_test_[:,1].reshape(-1,max_seq_length), "context_segment_id": X_test_[:,2].reshape(-1,max_seq_length)}
-# y_train_array=np.array(y_train)
-# y_train={"tf_op_layer_start_output":y_train_array[:,0].reshape(-1,1,max_seq_length),"tf_op_layer_end_output":y_train_array[:,1].reshape(-1,1,max_seq_length)}
-# model.fit(X_train,y_train,batch_size=35,epochs=10)
-# model.save("modelo_prueba.h5")
-# y_pred=model.predict(X_test_pre)
-# cosas =""
-# metric_(X_test,y_test,y_pred)
+# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
+# # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 #
-
-
+# early_callback_start=tf.keras.callbacks.EarlyStopping(
+#     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
+# )
+# # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
+# model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
+#
+# # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+# #
+# # model.save_weights("modelo_prueba{}.hdf5".format(t))
+# path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+# X_test,y_test = crear_batch(path,fragmented=False)
+# # X_test,y_test = X_test[:10,:],y_test[:10,:]
+# entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
+#            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
+#            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
+# y_start,y_end = model.predict(entrada)
+#
+# with open("y_pred_end","w+b") as f :
+#     pickle.dump(y_end,f)
+# with open("y_pred_start","w+b") as f :
+#     pickle.dump(y_start,f)
+#
+#
+#
+# metric_(X_test,y_test[:2000],y_start,y_end)
