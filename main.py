@@ -344,7 +344,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.00005)
+    optim=keras.optimizers.Adam(lr=0.005)
     model.compile(optimizer=optim,loss=[custom_metric,custom_metric],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
@@ -451,35 +451,34 @@ salida=[y[:2000,0],y[:2000,1]]
 # entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
 #            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
 #            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
+
+
+
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
+# tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
+
+early_callback_start=tf.keras.callbacks.EarlyStopping(
+    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
+)
+# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
+model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
+
+# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+#
+# model.save_weights("modelo_prueba{}.hdf5".format(t))
+path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+X_test,y_test = crear_batch(path,fragmented=False)
+# X_test,y_test = X_test[:10,:],y_test[:10,:]
+entrada = {"questions_id": np.squeeze(X_test[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:2000, 4].astype(np.int32)),
+           "question_segment_id": np.squeeze(X_test[:2000, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:2000, 0].astype(np.int32)),
+           "context_input_mask": np.squeeze(X_test[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:2000, 2].astype(np.int32))}
 y_start,y_end = model.predict(entrada)
 
+with open("y_pred_end","w+b") as f :
+    pickle.dump(y_end,f)
+with open("y_pred_start","w+b") as f :
+    pickle.dump(y_start,f)
 
-#
-# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
-# # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
-#
-# early_callback_start=tf.keras.callbacks.EarlyStopping(
-#     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
-# )
-# # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-# model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
-#
-# # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
-# #
-# # model.save_weights("modelo_prueba{}.hdf5".format(t))
-# path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-# X_test,y_test = crear_batch(path,fragmented=False)
-# # X_test,y_test = X_test[:10,:],y_test[:10,:]
-# entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
-#            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
-#            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
-# y_start,y_end = model.predict(entrada)
-#
-# with open("y_pred_end","w+b") as f :
-#     pickle.dump(y_end,f)
-# with open("y_pred_start","w+b") as f :
-#     pickle.dump(y_start,f)
-#
-#
-#
-# metric_(X_test,y_test[:2000],y_start,y_end)
+
+
+metric_(X_test,y_test[:2000],y_start,y_end)
