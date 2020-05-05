@@ -75,7 +75,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                                     indices.append(list(text_tokens).index(token))
                                                 first_index = indices[0]
                                                 last_index = indices[-1]
-                                            break
+                                                break
                                         except:
                                             continue
 
@@ -144,7 +144,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                                     indices.append(list(text_tokens).index(token))
                                                 first_index = indices[0]
                                                 last_index = indices[-1]
-                                            break
+                                                break
                                         except:
                                             continue
 
@@ -226,7 +226,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                                     indices.append(list(text_tokens).index(token))
                                                 first_index = indices[0]
                                                 last_index = indices[-1]
-                                            break
+                                                break
                                         except:
                                             continue
 

@@ -83,7 +83,7 @@ def metric_(X,y_true,y_start,y_end):
         i+=1
         s=""
         for tok in questions_tokens:
-            if tok!="[PAD]" and tok!="[SEP]":
+            if tok!="[PAD]" and tok!="[SEP]" and tok!="[CLS]":
                 s+=tok+" "
         f.write("Question:{} True answer: {}   \n  Predicted_answer: {}       Jaccard: {}  \n".format(s,context_tokens[true_ini:true_end+1],context_tokens[pred_ini:pred_end+1],jaccard_index))
 
@@ -345,18 +345,22 @@ def build_model(max_seq_length = 512 ):
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.005)
-    model.compile(optimizer=optim,loss=[custom_metric,custom_metric],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
+    model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
 
     return model
-@tf.function
-def custom_metric(y_true,y_pred):
-    multpli = tf.multiply(y_true,y_pred)
-    result = -keras.backend.sum(multpli)
-    return result
 
+def create_metric(number_clases,label_smoothing=0):
+
+    @tf.function
+    def custom_metric(y_true,y_pred):
+        y_true =(1-label_smoothing)*y_true+ label_smoothing/number_clases
+        multpli = tf.multiply(y_true,y_pred)
+        result = -keras.backend.sum(multpli)
+        return result
+    return custom_metric
 
 def crear_batch(path_to_features,fragmented=False,batchsize=32):
     if fragmented:
@@ -390,96 +394,106 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 
 # Later, when launching the model
 
-
+#
 max_seq_length = 350# Your choice here.
-
-print("VOY A HACER EL MODELO")
-
-# keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
-model=build_model(max_seq_length)
-
-print("YA HICE EL MODELO")
-
-
-
-
-# X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_size=0.1)
-
-# N=len(X_train)
-# X_train=np.array(X_train)
-# string=serialize_example_features(X[0][0],X[0][1],X[0][2],X[0][3],X[0][4],X[0][5])
-# example_proto = tf.train.Example.FromString(string)
+#
+# print("VOY A HACER EL MODELO")
+#
+# # keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
+# model=build_model(max_seq_length)
+#
+# print("YA HICE EL MODELO")
 #
 #
-# ########################  ASÍ SE RECUPERA EL FEATURE POR SI LO NECESITO MÁS TARDE##############################
-# # list(example_proto.features.feature["question_id"].int64_list.value)
-# ###############################################################################################################
+#
+#
+# # X_train,X_test,y_train,y_test,ids_train,ids_test=train_test_split(X,y,ids,test_size=0.1)
+#
+# # N=len(X_train)
+# # X_train=np.array(X_train)
+# # string=serialize_example_features(X[0][0],X[0][1],X[0][2],X[0][3],X[0][4],X[0][5])
+# # example_proto = tf.train.Example.FromString(string)
 # #
-# print(string)
-
-# print(features_dataset)
-# serialized_features_dataset = features_dataset.map(tf_serialize_example_features)
-# # print(serialized_features_dataset)
 # #
-# filename = 'x_test.tfrecord'
-# writer = tf.data.experimental.TFRecordWriter(filename)
-# writer.write(serialized_features_dataset)
-# writer.close()
-# filenames = [filename]
-# train_dataset=tf.data.TFRecordDataset('x_test.tfrecord').batch(32)
-# for serialized_example in train_dataset:
-#     for elem in serialized_example
-#         example = tf.train.Example()
-#         example.ParseFromString(elem)
-#         x_1 = np.array(example.features.feature['X'].float_list.value)
-#         y_1 = np.array(example.features.feature['Y'].float_list.value)
-#         break
+# # ########################  ASÍ SE RECUPERA EL FEATURE POR SI LO NECESITO MÁS TARDE##############################
+# # # list(example_proto.features.feature["question_id"].int64_list.value)
+# # ###############################################################################################################
+# # #
+# # print(string)
 #
-
-path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+# # print(features_dataset)
+# # serialized_features_dataset = features_dataset.map(tf_serialize_example_features)
+# # # print(serialized_features_dataset)
+# # #
+# # filename = 'x_test.tfrecord'
+# # writer = tf.data.experimental.TFRecordWriter(filename)
+# # writer.write(serialized_features_dataset)
+# # writer.close()
+# # filenames = [filename]
+# # train_dataset=tf.data.TFRecordDataset('x_test.tfrecord').batch(32)
+# # for serialized_example in train_dataset:
+# #     for elem in serialized_example
+# #         example = tf.train.Example()
+# #         example.ParseFromString(elem)
+# #         x_1 = np.array(example.features.feature['X'].float_list.value)
+# #         y_1 = np.array(example.features.feature['Y'].float_list.value)
+# #         break
+# #
 #
-import time
-t=time.time()
-log_name="Salida_modelo_{}.txt".format(t)
-x,y=crear_batch(path,fragmented=False)
-
-entrada = {"questions_id": np.squeeze(x[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:2000, 4].astype(np.int32)),
-           "question_segment_id": np.squeeze(x[:2000, 5].astype(np.int32)), "context_id": np.squeeze(x[:2000, 0].astype(np.int32)),
-           "context_input_mask": np.squeeze(x[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:2000, 2].astype(np.int32))}
-salida=[y[:2000,0],y[:2000,1]]
-
-# entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
-#            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
-#            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
-
-
-
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
-# tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
-
-early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
-)
-# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
-
-# train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
-
+# path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+# #
+# import time
+# t=time.time()
+# log_name="Salida_modelo_{}.txt".format(t)
+# x,y=crear_batch(path,fragmented=False)
+#
+# entrada = {"questions_id": np.squeeze(x[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:2000, 4].astype(np.int32)),
+#            "question_segment_id": np.squeeze(x[:2000, 5].astype(np.int32)), "context_id": np.squeeze(x[:2000, 0].astype(np.int32)),
+#            "context_input_mask": np.squeeze(x[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:2000, 2].astype(np.int32))}
+# salida=[y[:2000,0],y[:2000,1]]
+#
+# # entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
+# #            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
+# #            "context_inpu
+# t_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
+#
+#
+#
+# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
+# # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
+#
+# early_callback_start=tf.keras.callbacks.EarlyStopping(
+#     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
+# )
+# # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
+# model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
+#
+# # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+#
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
 # X_test,y_test = X_test[:10,:],y_test[:10,:]
-entrada = {"questions_id": np.squeeze(X_test[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:2000, 4].astype(np.int32)),
-           "question_segment_id": np.squeeze(X_test[:2000, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:2000, 0].astype(np.int32)),
-           "context_input_mask": np.squeeze(X_test[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:2000, 2].astype(np.int32))}
-model.load_weights("local_model/model_e10-val_loss82.3117.hdf5")
-y_start,y_end = model.predict(entrada)
+# entrada = {"questions_id": np.squeeze(X_test[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:2000, 4].astype(np.int32)),
+#            "question_segment_id": np.squeeze(X_test[:2000, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:2000, 0].astype(np.int32)),
+#            "context_input_mask": np.squeeze(X_test[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:2000, 2].astype(np.int32))}
+# model.load_weights("local_model/model_e10-val_loss82.3117.hdf5")
+# y_start,y_end = model.predict(entrada)
+#
 
-with open("y_pred_end","w+b") as f :
-    pickle.dump(y_end,f)
-with open("y_pred_start","w+b") as f :
-    pickle.dump(y_start,f)
+# with open("y_pred_end","w+b") as f :
+#     pickle.dump(y_end,f)
+# with open("y_pred_start","w+b") as f :
+#     pickle.dump(y_start,f)
 
 
+with open("y_pred_end","r+b") as f :
+    y_end = pickle.load(f)
+with open("y_pred_start","r+b") as f :
+    y_start = pickle.load(f)
+
+
+
+#
 
 metric_(X_test,y_test[:2000],y_start,y_end)
