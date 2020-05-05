@@ -57,14 +57,14 @@ del bert_layer
 def metric_(X,y_true,y_start,y_end):
     promedio_desempeno=0
     i=0
-    N=X.shape[0]
+    N = X.shape[0]
     y_true=np.array(y_true)
     f = open("Salida_modelo.txt","w")
     for index in range(N):
         features = X[index,:]
         true_index = y_true[i]
         questions_ids = features[3][0]
-        print(questions_ids)
+
         questions_tokens = tokenizer.convert_ids_to_tokens(questions_ids)
         context_tokens = tokenizer.convert_ids_to_tokens(list(features[0][0]))
         true_ini = np.argmax(true_index[0])
@@ -464,7 +464,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
-#
+
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
@@ -472,6 +472,7 @@ X_test,y_test = crear_batch(path,fragmented=False)
 entrada = {"questions_id": np.squeeze(X_test[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:2000, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(X_test[:2000, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:2000, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(X_test[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:2000, 2].astype(np.int32))}
+model.load_weights("local_model/model_e10-val_loss82.3117.hdf5")
 y_start,y_end = model.predict(entrada)
 
 with open("y_pred_end","w+b") as f :

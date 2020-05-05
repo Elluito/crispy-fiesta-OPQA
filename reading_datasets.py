@@ -68,11 +68,14 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     ids.append(unique_id)
                                     for ans in question["answers"]:
                                         try:
-                                            text_answer_list = ans["text"].split()
-                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
-                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                            first_index =text_tokens.index(first_word)
-                                            last_index=text_tokens.index(last_word)
+                                            if ans["text"] in text:
+                                                text_answer_list = tokenizer.tokenize(ans["text"])
+                                                indices = []
+                                                for token in text_answer_list:
+                                                    indices.append(list(text_tokens).index(token))
+                                                first_index = indices[0]
+                                                last_index = indices[-1]
+                                            break
                                         except:
                                             continue
 
@@ -134,11 +137,14 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     ids.append(unique_id)
                                     for ans in question["answers"]:
                                         try:
-                                            text_answer_list = ans["text"].split()
-                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
-                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                            first_index = text_tokens.index(first_word)
-                                            last_index = text_tokens.index(last_word)
+                                            if ans["text"] in text:
+                                                text_answer_list = tokenizer.tokenize(ans["text"])
+                                                indices = []
+                                                for token in text_answer_list:
+                                                    indices.append(list(text_tokens).index(token))
+                                                first_index = indices[0]
+                                                last_index = indices[-1]
+                                            break
                                         except:
                                             continue
 
@@ -213,11 +219,14 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     ids.append(unique_id)
                                     for ans in question["answers"]:
                                         try:
-                                            text_answer_list = ans["text"].split()
-                                            first_word = tokenizer.tokenize(text_answer_list[0])[0]
-                                            last_word = tokenizer.tokenize(text_answer_list[-1])[0]
-                                            first_index = text_tokens.index(first_word)
-                                            last_index = text_tokens.index(last_word)
+                                            if ans["text"] in text:
+                                                text_answer_list = tokenizer.tokenize(ans["text"])
+                                                indices = []
+                                                for token in text_answer_list:
+                                                    indices.append(list(text_tokens).index(token))
+                                                first_index = indices[0]
+                                                last_index = indices[-1]
+                                            break
                                         except:
                                             continue
 
