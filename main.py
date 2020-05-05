@@ -443,9 +443,9 @@ t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
 x,y=crear_batch(path,fragmented=False)
 
-entrada = {"questions_id": np.squeeze(x[:2000, 3]), "question_input_mask": np.squeeze(x[:2000, 4]),
-           "question_segment_id": np.squeeze(x[:2000, 5]), "context_id": np.squeeze(x[:2000, 0]),
-           "context_input_mask": np.squeeze(x[:2000, 1]), "context_segment_id": np.squeeze(x[:2000, 2])}
+entrada = {"questions_id": np.squeeze(x[:2000, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:2000, 4].astype(np.int32)),
+           "question_segment_id": np.squeeze(x[:2000, 5].astype(np.int32)), "context_id": np.squeeze(x[:2000, 0].astype(np.int32)),
+           "context_input_mask": np.squeeze(x[:2000, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:2000, 2].astype(np.int32))}
 salida=[y[:2000,0],y[:2000,1]]
 
 # entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
