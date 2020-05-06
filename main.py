@@ -472,7 +472,7 @@ model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=3,callbacks=[
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
-X_test,y_test = X_test[:10,:],y_test[:10,:]
+# X_test,y_test = X_test[:10,:],y_test[:10,:]
 entrada = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
