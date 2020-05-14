@@ -67,6 +67,7 @@ def metric_(X,y_true,y_start,y_end):
 
         questions_tokens = tokenizer.convert_ids_to_tokens(questions_ids)
         context_tokens = tokenizer.convert_ids_to_tokens(list(features[0][0]))
+        context_tokens.pop(0)
         true_ini = np.argmax(true_index[0])
         true_end = np.argmax(true_index[1])
         pred_ini = np.argmax(y_start[i,:])
@@ -294,15 +295,15 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.softmax(temp)
     new_representation =tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
     new_representation = keras.layers.BatchNormalization()(new_representation)
-    layer_encoder_start = keras.layers.Bidirectional(LSTM(1,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
+    layer_encoder_start = keras.layers.Bidirectional(LSTM(120,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
 
-    layer_decoder_start= keras.layers.Bidirectional(LSTM(1, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='sum')
+    layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
 
     layer_encoder_end = keras.layers.Bidirectional(
-        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
+        LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
 
     layer_decoder_end = keras.layers.Bidirectional(
-        LSTM(1, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 1)), merge_mode='sum')
+        LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
 
     mid_start  = layer_encoder_start(new_representation)
     # encoder_state_c = ecoder_state_c_forth + ecoder_state_c_back
@@ -312,10 +313,12 @@ def build_model(max_seq_length = 512 ):
     mid_end = layer_encoder_end(new_representation)
     output_for_end = layer_decoder_end(mid_end)
 
-    output_start = tf.reshape(output_for_start,[-1,max_seq_length])
-    output_end = tf.reshape(output_for_end,[-1,max_seq_length])
-    soft_max_start =keras.layers.Softmax()(output_start)
-    soft_max_end = keras.layers.Softmax()(output_end)
+    # output_start = tf.reshape(output_for_start,[-1,max_seq_length])
+    # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
+    output_for_start = keras.layers.Flatten()(output_for_start)
+    output_for_end = keras.layers.Flatten()(output_for_end)
+    soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax")(output_for_start)
+    soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax")(output_for_end)
 
     # _,out=tf.shape(output_start).numpy()
 
@@ -344,7 +347,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.005)
+    optim=keras.optimizers.Adam(lr=0.0005)
     model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
@@ -446,7 +449,7 @@ import time
 t=time.time()
 log_name="Salida_modelo_{}.txt".format(t)
 x,y=crear_batch(path,fragmented=False)
-N=len(x)
+N= 5000 # len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
