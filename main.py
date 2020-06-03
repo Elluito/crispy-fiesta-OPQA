@@ -315,8 +315,8 @@ def build_model(max_seq_length = 512 ):
 
     # output_start = tf.reshape(output_for_start,[-1,max_seq_length])
     # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
-    output_for_start = keras.layers.Flatten()(output_for_start)
-    output_for_end = keras.layers.Flatten()(output_for_end)
+    output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
+    output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
     soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax")(output_for_start)
     soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax")(output_for_end)
 
@@ -403,7 +403,7 @@ max_seq_length = 350# Your choice here.
 print("VOY A HACER EL MODELO")
 
 # keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
-model=build_model(max_seq_length)
+model = build_model(max_seq_length)
 
 print("YA HICE EL MODELO")
 
