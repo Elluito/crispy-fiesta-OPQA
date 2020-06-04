@@ -317,8 +317,8 @@ def build_model(max_seq_length = 512 ):
     # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
     output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
     output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
-    soft_max_start =keras.layers.Dense(max_seq_length)(output_for_start,name="output_logits_for_start")
-    soft_max_end = keras.layers.Dense(max_seq_length)(output_for_end,name="output_logits_for_end")
+    soft_max_start =keras.layers.Dense(max_seq_length,name="output_logits_for_start")(output_for_start)
+    soft_max_end = keras.layers.Dense(max_seq_length,name="output_logits_for_end")(output_for_end)
 
     # _,out=tf.shape(output_start).numpy()
 
