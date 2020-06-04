@@ -493,7 +493,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=2)
+model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start],verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
