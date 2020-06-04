@@ -317,8 +317,8 @@ def build_model(max_seq_length = 512 ):
     # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
     output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
     output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
-    soft_max_start =keras.layers.Dense(max_seq_length,name="output_logits_for_start")(output_for_start)
-    soft_max_end = keras.layers.Dense(max_seq_length,name="output_logits_for_end")(output_for_end)
+    soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_start")(output_for_start)
+    soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_end")(output_for_end)
 
     # _,out=tf.shape(output_start).numpy()
 
@@ -347,13 +347,9 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_start,soft_max_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.0005)
-    model.compile(optimizer=optim,loss=[lambda y_true, y_pred: tf.nn.weighted_cross_entropy_with_logits(labels=y_true,
-                                                                                                logits=y_pred,
-                                                                                                pos_weight=4),
-                                        lambda y_true, y_pred: tf.nn.weighted_cross_entropy_with_logits(labels=y_true,
-                                                                                                logits=y_pred,
-                                                                                                pos_weight=4)],
+    optim=keras.optimizers.Adam(lr=0.05)
+    model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(),keras.losses.CategoricalCrossentropy()
+                                                                                                ],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
@@ -493,7 +489,10 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start],verbose=2)
+reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
+    monitor='val_loss', factor=0.1, patience=2, verbose=1, mode='auto',
+    min_delta=0.0001, cooldown=0, min_lr=0)
+model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
