@@ -317,8 +317,8 @@ def build_model(max_seq_length = 512 ):
     # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
     output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
     output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
-    soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax")(output_for_start)
-    soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax")(output_for_end)
+    soft_max_start =keras.layers.Dense(max_seq_length)(output_for_start,name="output_logits_for_start")
+    soft_max_end = keras.layers.Dense(max_seq_length)(output_for_end,name="output_logits_for_end")
 
     # _,out=tf.shape(output_start).numpy()
 
@@ -342,18 +342,43 @@ def build_model(max_seq_length = 512 ):
     # soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
 
 
-    logits_for_start = tf.math.log(soft_max_start,name="log_start")
-    logits_for_end = tf.math.log(soft_max_end,name="log_end")
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ logits_for_start,logits_for_end],name="Luis_net")
+    # logits_for_start = tf.math.log(soft_max_start,name="log_start")
+    # logits_for_end = tf.math.log(soft_max_end,name="log_end")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_start,soft_max_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.0005)
-    model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
+    model.compile(optimizer=optim,loss=[lambda y_true, y_pred: tf.nn.weighted_cross_entropy_with_logits(labels=y_true,
+                                                                                                logits=y_pred,
+                                                                                                pos_weight=4),
+                                        lambda y_true, y_pred: tf.nn.weighted_cross_entropy_with_logits(labels=y_true,
+                                                                                                logits=y_pred,
+                                                                                                pos_weight=4)],
+                                        metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
 
     return model
+
+def macro_f1(y, y_hat, thresh = 0):
+    """Compute the macro F1-score on a batch of observations (average F1 across labels)
+
+    Args:
+        y (int32 Tensor): labels array of shape (BATCH_SIZE, N_LABELS)
+        y_hat (float32 Tensor): probability matrix from forward propagation of shape (BATCH_SIZE, N_LABELS)
+        thresh: probability value above which we predict positive
+
+    Returns:
+        macro_f1 (scalar Tensor): value of macro F1 for the batch
+    """
+    y_pred = tf.cast(tf.greater(y_hat, thresh), tf.float32)
+    tp = tf.cast(tf.math.count_nonzero(y_pred * y, axis=0), tf.float32)
+    fp = tf.cast(tf.math.count_nonzero(y_pred * (1 - y), axis=0), tf.float32)
+    fn = tf.cast(tf.math.count_nonzero((1 - y_pred) * y, axis=0), tf.float32)
+    f1 = 2 * tp / (2 * tp + fn + fp + 1e-16)
+    macro_f1 = tf.reduce_mean(f1)
+    return macro_f1
 
 def create_metric(number_clases,label_smoothing=0):
 
@@ -361,7 +386,7 @@ def create_metric(number_clases,label_smoothing=0):
     def custom_metric(y_true,y_pred):
         y_true =(1-label_smoothing)*y_true+ label_smoothing/number_clases
         multpli = tf.multiply(y_true,y_pred)
-        result = -keras.backend.sum(multpli)
+        result = keras.backend.sum(multpli)
         return result
     return custom_metric
 
