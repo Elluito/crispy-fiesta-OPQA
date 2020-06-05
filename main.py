@@ -195,6 +195,16 @@ def grad(model, inputs, targets):
   with tf.GradientTape() as tape:
     loss_value1,loss_value2,y1,y2 = loss(model, inputs, targets, training=True)
   return loss_value1,loss_value2, tape.gradient([loss_value1,loss_value2],model.trainable_variables),y1,y2
+def positional_embedding(pos, model_size):
+    PE = np.zeros((1, model_size))
+    for i in range(model_size):
+        if i % 2 == 0:
+            PE[:, i] = np.sin(pos / 10000 ** (i / model_size))
+        else:
+            PE[:, i] = np.cos(pos / 10000 ** ((i - 1) / model_size))
+    return PE
+
+
 
 def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_per_epoch=10,epochs=10):
     optimizer = tf.keras.optimizers.Adadelta(learning_rate=0.001)
@@ -293,8 +303,12 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
 
     temp = tf.math.softmax(temp)
-    new_representation =tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
-    new_representation = keras.layers.BatchNormalization()(new_representation)
+    attention_from_question_to_context = tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
+    self_attention_context = keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output])
+    attention_from_context_to_question = keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output])
+
+
+    # new_representation = keras.layers.BatchNormalization()(new_representation)
     layer_encoder_start = keras.layers.Bidirectional(LSTM(120,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
 
     layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
@@ -305,20 +319,40 @@ def build_model(max_seq_length = 512 ):
     layer_decoder_end = keras.layers.Bidirectional(
         LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
 
-    mid_start  = layer_encoder_start(new_representation)
-    # encoder_state_c = ecoder_state_c_forth + ecoder_state_c_back
-    # encoder_state_h = ecoder_state_h_forth + ecoder_state_h_back
-    # encoder_state = [encoder_state_h, encoder_state_c]
-    output_for_start = layer_decoder_start(mid_start)
-    mid_end = layer_encoder_end(new_representation)
-    output_for_end = layer_decoder_end(mid_end)
+    # Hago el positional embedding
+    pes = []
+    for i in range(max_seq_length):
+        pes.append(positional_embedding(i, dim))
 
-    # output_start = tf.reshape(output_for_start,[-1,max_seq_length])
-    # output_end = tf.reshape(output_for_end,[-1,max_seq_length])
-    output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
-    output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
-    soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_start")(output_for_start)
-    soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_end")(output_for_end)
+    pes = np.concatenate(pes, axis=0)
+    pes = tf.constant(pes, dtype=tf.float32)
+
+    #Sumo el positional embedding con cada una de las salidas
+
+    attention_from_context_to_question += pes
+    self_attention_context += pes
+    attention_from_question_to_context += pes
+
+    soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
+    soft_max_salida_start = keras.layers.BatchNormalization()(soft_max_salida_start )
+    soft_max_salida_start = keras.layers.Activation("softmax")(soft_max_salida_start )
+
+    soft_max_salida_end = keras.layers.Dense(max_seq_length)(attention_from_question_to_context) + keras.layers.Dense(
+        max_seq_length)(attention_from_context_to_question) + keras.layers.Dense(max_seq_length)(self_attention_context)
+    soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
+    soft_max_salida_end = keras.layers.Activation("softmax")(soft_max_salida_end)
+
+
+    # mid_start  = layer_encoder_start(new_representation)
+
+    # output_for_start = layer_decoder_start(mid_start)
+    # mid_end = layer_encoder_end(new_representation)
+    # output_for_end = layer_decoder_end(mid_end)
+
+    # output_for_start = tf.reshape(output_for_start,[-1,max_seq_length*120])
+    # output_for_end = tf.reshape(output_for_end,[-1,max_seq_length*120])
+    # soft_max_start =keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_start")(output_for_start)
+    # soft_max_end = keras.layers.Dense(max_seq_length,activation="softmax",name="output_logits_for_end")(output_for_end)
 
     # _,out=tf.shape(output_start).numpy()
 
@@ -344,12 +378,11 @@ def build_model(max_seq_length = 512 ):
 
     # logits_for_start = tf.math.log(soft_max_start,name="log_start")
     # logits_for_end = tf.math.log(soft_max_end,name="log_end")
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_start,soft_max_end],name="Luis_net")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.05)
-    model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(),keras.losses.CategoricalCrossentropy()
-                                                                                                ],
+    optim=keras.optimizers.Adam(lr=0.05,beta_2=0.98)
+    model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
 
@@ -382,7 +415,7 @@ def create_metric(number_clases,label_smoothing=0):
     def custom_metric(y_true,y_pred):
         y_true =(1-label_smoothing)*y_true+ label_smoothing/number_clases
         multpli = tf.multiply(y_true,y_pred)
-        result = keras.backend.sum(multpli)
+        result = -keras.backend.sum(multpli)
         return result
     return custom_metric
 
