@@ -6,7 +6,6 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
 from official.nlp.bert.tokenization import FullTokenizer
-from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
@@ -303,21 +302,21 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
 
     temp = tf.math.softmax(temp)
-    attention_from_question_to_context = tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
-    self_attention_context = keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output])
-    attention_from_context_to_question = keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output])
+    attention_from_question_to_context = tf.reduce_sum(tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1])),axis=1)
+    self_attention_context = tf.reduce_sum(keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output]),axis=1)
+    attention_from_context_to_question = tf.reduce_sum(keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output]),axis=1)
 
 
     # new_representation = keras.layers.BatchNormalization()(new_representation)
-    layer_encoder_start = keras.layers.Bidirectional(LSTM(120,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
-
-    layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
-
-    layer_encoder_end = keras.layers.Bidirectional(
-        LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
-
-    layer_decoder_end = keras.layers.Bidirectional(
-        LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
+    # layer_encoder_start = keras.layers.Bidirectional(LSTM(120,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
+    #
+    # layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
+    #
+    # layer_encoder_end = keras.layers.Bidirectional(
+    #     LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
+    #
+    # layer_decoder_end = keras.layers.Bidirectional(
+    #     LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
 
     # Hago el positional embedding
     pes = []
