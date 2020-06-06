@@ -11,7 +11,7 @@ from official.nlp.bert.tokenization import FullTokenizer
 from reading_datasets import read_dataset
 
 print(tf.__version__)
-
+BATCH_SIZE=10
 tf.compat.v1.enable_eager_execution()
 # os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 # os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -324,7 +324,12 @@ def build_model(max_seq_length = 512 ):
         pes.append(positional_embedding(i, dim))
 
     pes = np.concatenate(pes, axis=0)
-    pes = tf.constant(pes, dtype=tf.float32)
+    # pes = tf.constant(pes, dtype=tf.float32)
+    new_pes =[]
+    for i in range(BATCH_SIZE):
+        new_pes .append(pes)
+
+    pes = tf.constant(new_pes, dtype=tf.float32)
 
     #Sumo el positional embedding con cada una de las salidas
 
@@ -524,7 +529,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=2, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=10,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
