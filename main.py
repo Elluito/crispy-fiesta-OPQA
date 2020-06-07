@@ -293,7 +293,7 @@ def build_model(max_seq_length = 512 ):
     activation = keras.activations.elu
     substring=[i for i in url_uncased.split("_") if "H-" in i]
     if substring==[]:
-        dim=128
+        dim = 128
     else:
         substring=substring[0]
         dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
@@ -344,11 +344,11 @@ def build_model(max_seq_length = 512 ):
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
 
     soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
-    soft_max_salida_start = keras.layers.Activation("softmax")(soft_max_salida_start )
+    soft_max_salida_start = keras.layers.Activation("softmax",name="Salida_start")(soft_max_salida_start )
 
     soft_max_salida_end = temp2
     soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
-    soft_max_salida_end = keras.layers.Activation("softmax")(soft_max_salida_end)
+    soft_max_salida_end = keras.layers.Activation("softmax",name="Salida_end")(soft_max_salida_end)
 
 
     # mid_start  = layer_encoder_start(new_representation)
@@ -389,7 +389,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.05,beta_2=0.98)
+    optim=keras.optimizers.Adam(lr=0.0005,beta_2=0.98)
     model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
@@ -511,7 +511,7 @@ import time
 t = time.time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = 5000 # len(x)
+N = 8000 # len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
@@ -527,13 +527,13 @@ model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-va
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
+    monitor="val_loss", patience=8, verbose=0, mode='auto', restore_best_weights=True
 )
 # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=2, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=20,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=100,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
