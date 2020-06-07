@@ -319,23 +319,23 @@ def build_model(max_seq_length = 512 ):
     #     LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
 
     # Hago el positional embedding
-    pes = []
-    for i in range(max_seq_length):
-        pes.append(positional_embedding(i, dim))
-
-    pes = np.concatenate(pes, axis=0)
-    # pes = tf.constant(pes, dtype=tf.float32)
-    new_pes =[]
-    for i in range(BATCH_SIZE):
-        new_pes .append(pes)
-
-    pes = tf.constant(new_pes, dtype=tf.float32)
+    # pes = []
+    # for i in range(max_seq_length):
+    #     pes.append(positional_embedding(i, dim))
+    #
+    # pes = np.concatenate(pes, axis=0)
+    # # pes = tf.constant(pes, dtype=tf.float32)
+    # new_pes =[]
+    # for i in range(BATCH_SIZE):
+    #     new_pes .append(pes)
+    #
+    # pes = tf.constant(new_pes, dtype=tf.float32)
 
     #Sumo el positional embedding con cada una de las salidas
 
-    attention_from_context_to_question += pes
-    self_attention_context += pes
-    attention_from_question_to_context += pes
+    # attention_from_context_to_question += pes
+    # self_attention_context += pes
+    # attention_from_question_to_context += pes
 
 
     temp = attention_from_context_to_question+attention_from_question_to_context+self_attention_context
