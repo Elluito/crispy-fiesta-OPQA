@@ -302,9 +302,9 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
 
     temp = tf.math.softmax(temp)
-    attention_from_question_to_context = tf.reduce_sum(tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1])),axis=1)
-    self_attention_context = tf.reduce_sum(keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output]),axis=1)
-    attention_from_context_to_question = tf.reduce_sum(keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output]),axis=1)
+    attention_from_question_to_context = tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
+    self_attention_context = keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output])
+    attention_from_context_to_question = keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output])
 
 
     # new_representation = keras.layers.BatchNormalization()(new_representation)
@@ -337,12 +337,16 @@ def build_model(max_seq_length = 512 ):
     self_attention_context += pes
     attention_from_question_to_context += pes
 
-    soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
-    soft_max_salida_start = keras.layers.BatchNormalization()(soft_max_salida_start )
+
+    temp = attention_from_context_to_question+attention_from_question_to_context+self_attention_context
+    temp1  = keras.layers.Dense(max_seq_length)(keras.layers.Flatten()(temp))
+    temp2  = keras.layers.Dense(max_seq_length)(keras.layers.Flatten()(temp))
+    # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
+
+    soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
     soft_max_salida_start = keras.layers.Activation("softmax")(soft_max_salida_start )
 
-    soft_max_salida_end = keras.layers.Dense(max_seq_length)(attention_from_question_to_context) + keras.layers.Dense(
-        max_seq_length)(attention_from_context_to_question) + keras.layers.Dense(max_seq_length)(self_attention_context)
+    soft_max_salida_end = temp2
     soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
     soft_max_salida_end = keras.layers.Activation("softmax")(soft_max_salida_end)
 
