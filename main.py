@@ -339,8 +339,8 @@ def build_model(max_seq_length = 512 ):
 
 
     temp = attention_from_context_to_question+attention_from_question_to_context+self_attention_context
-    temp1  = keras.layers.Dense(max_seq_length)(keras.layers.Flatten()(temp))
-    temp2  = keras.layers.Dense(max_seq_length)(keras.layers.Flatten()(temp))
+    temp1  = keras.layers.Dense(max_seq_length)(tf.reshape(temp,[-1,max_seq_length*dim]))
+    temp2  = keras.layers.Dense(max_seq_length)(tf.reshape(temp,[-1,max_seq_length*dim]))
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
 
     soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
