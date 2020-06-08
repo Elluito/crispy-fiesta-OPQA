@@ -6,6 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
 from official.nlp.bert.tokenization import FullTokenizer
+from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
@@ -308,13 +309,13 @@ def build_model(max_seq_length = 512 ):
 
 
     # new_representation = keras.layers.BatchNormalization()(new_representation)
-    # layer_encoder_start = keras.layers.Bidirectional(LSTM(120,activation="tanh", return_sequences=True, input_shape=(max_seq_length,dim)),merge_mode='sum')
+    # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    # layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
+    layer_decoder_start= LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    # layer_decoder_end =LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120))
+    layer_decoder_end =LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
 
     # Hago el positional embedding
     # pes = []
@@ -336,9 +337,11 @@ def build_model(max_seq_length = 512 ):
     # attention_from_question_to_context += pes
 
 
-    temp = attention_from_context_to_question+attention_from_question_to_context+self_attention_context
-    temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
-    temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
+    temp = keras.layers.Concatenate(axis=1)( [attention_from_context_to_question,attention_from_question_to_context,attention_from_context_to_question*attention_from_question_to_context])
+    temp1 = keras.layers.Dense(max_seq_length)(layer_decoder_start(temp))
+    temp2 =keras.layers.Dense(max_seq_length)(layer_decoder_end(temp))
+    # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
+    # temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
 
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
 
@@ -388,7 +391,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.0005,beta_2=0.98)
+    optim=keras.optimizers.Adam(lr=0.05,beta_2=0.98)
     model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
