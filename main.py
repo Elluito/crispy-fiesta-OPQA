@@ -311,11 +311,11 @@ def build_model(max_seq_length = 512 ):
     # new_representation = keras.layers.BatchNormalization()(new_representation)
     # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_start= LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_start= LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_end =LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_end =LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
 
     # Hago el positional embedding
     # pes = []
