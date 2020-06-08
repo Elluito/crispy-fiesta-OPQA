@@ -312,11 +312,9 @@ def build_model(max_seq_length = 512 ):
     #
     # layer_decoder_start= keras.layers.Bidirectional(LSTM(120, activation="tanh",return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
     #
-    # layer_encoder_end = keras.layers.Bidirectional(
-    #     LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim)), merge_mode='sum')
+    # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    # layer_decoder_end = keras.layers.Bidirectional(
-    #     LSTM(120, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120)), merge_mode='sum')
+    # layer_decoder_end =LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, 120))
 
     # Hago el positional embedding
     # pes = []
@@ -339,8 +337,9 @@ def build_model(max_seq_length = 512 ):
 
 
     temp = attention_from_context_to_question+attention_from_question_to_context+self_attention_context
-    temp1  = keras.layers.Dense(max_seq_length)(tf.reshape(temp,[-1,max_seq_length*dim]))
-    temp2  = keras.layers.Dense(max_seq_length)(tf.reshape(temp,[-1,max_seq_length*dim]))
+    temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
+    temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
+
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
 
     soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
