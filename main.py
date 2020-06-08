@@ -311,11 +311,11 @@ def build_model(max_seq_length = 512 ):
     # new_representation = keras.layers.BatchNormalization()(new_representation)
     # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_start= LSTM(1024, activation="tanh", input_shape=(max_seq_length*3, dim))
+    layer_decoder_start= LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_end =LSTM(1024, activation="tanh", input_shape=(max_seq_length*3, dim))
+    layer_decoder_end =LSTM(1024, activation="tanh", input_shape=(max_seq_length, dim))
 
     # Hago el positional embedding
     # pes = []
@@ -337,7 +337,7 @@ def build_model(max_seq_length = 512 ):
     # attention_from_question_to_context += pes
 
 
-    temp = keras.layers.Concatenate(axis=1)( [attention_from_context_to_question,attention_from_question_to_context,attention_from_context_to_question*attention_from_question_to_context])
+    temp = attention_from_context_to_question+attention_from_question_to_context
     temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
     temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
