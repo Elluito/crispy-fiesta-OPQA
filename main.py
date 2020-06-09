@@ -410,7 +410,7 @@ def create_metric(number_clases,label_smoothing=0):
     def custom_metric(y_true,y_pred):
         y_true =(1-label_smoothing)*y_true+ label_smoothing/number_clases
         multpli = tf.multiply(y_true,y_pred)
-        result = -keras.backend.sum(multpli)
+        result = -keras.backend.mean(multpli)
         return result
     return custom_metric
 
