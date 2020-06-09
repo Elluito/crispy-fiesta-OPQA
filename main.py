@@ -270,20 +270,6 @@ def build_model(max_seq_length = 512 ):
     context_input_mask = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_input_mask")
     context_segment_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_segment_id")
 
-    # albert_inputs1 = dict(
-    #     input_ids=question_input_word_ids,
-    #     input_mask=question_input_mask,
-    #     segment_ids=question_segment_ids)
-    # albert_outputs = albert_module(albert_inputs1, signature="tokens", as_dict=True)
-    # # question_pooled_output = albert_outputs["pooled_output"]
-    # question_sequence_output = albert_outputs["sequence_output"]
-    #
-    # albert_inputs2 = dict(
-    #     input_ids=context_input_word_ids,
-    #     input_mask=context_input_mask,
-    #     segment_ids=context_segment_ids)
-    # albert_outputs = albert_module(albert_inputs2, signature="tokens", as_dict=True)
-    # context_sequence_output = albert_outputs["sequence_output"]
 
     bert_layer = hub.KerasLayer(url_uncased,trainable=False, name="Bert_variant_model")
 
@@ -386,8 +372,7 @@ def build_model(max_seq_length = 512 ):
     # soft_max_end=tf.reshape(soft_max_end,[-1,max_seq_length],name="end_output")
 
 
-    # logits_for_start = tf.math.log(soft_max_start,name="log_start")
-    # logits_for_end = tf.math.log(soft_max_end,name="log_end")
+
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
@@ -513,7 +498,7 @@ import time
 t = time.time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = 8000 # len(x)
+N = len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
@@ -529,13 +514,13 @@ model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-va
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_loss", patience=8, verbose=0, mode='auto', restore_best_weights=True
+    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
 )
 # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
-    monitor='val_loss', factor=0.1, patience=2, verbose=1, mode='auto',
+    monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=100,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
