@@ -376,7 +376,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.05,beta_2=0.98)
+    optim=keras.optimizers.Adam(lr=0.0005,beta_2=0.98)
     model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
@@ -510,7 +510,7 @@ salida=[y[:N,0],y[:N,1]]
 
 
 
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss{val_loss:.4f}.hdf5",save_best_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -520,11 +520,12 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
+# model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
 # model.save_weights("modelo_prueba{}.hdf5".format(t))
+model.load_weights("local_model/model_e1-val_loss-0.0002.hdf5")
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
 # X_test,y_test = X_test[:10,:],y_test[:10,:]
