@@ -54,12 +54,12 @@ del bert_layer
 #
 # vocab_file=b'C:\\Users\\LUISAL~1\\AppData\\Local\\Temp\\tfhub_modules\\88ac13afec2955fd14396e4582c251841b67429a\\assets\\vocab.txt'
 # tokenizer = FullTokenizer(vocab_file)
-def metric_(X,y_true,y_start,y_end):
+def metric_(X,y_true,y_start,y_end,log_name):
     promedio_desempeno=0
     i=0
     N = X.shape[0]
     y_true=np.array(y_true)
-    f = open("Salida_modelo.txt","w")
+    f = open(log_name,"w")
     for index in range(N):
         features = X[index,:]
         true_index = y_true[i]
@@ -330,12 +330,12 @@ def build_model(max_seq_length = 512 ):
     # temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
 
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
-
-    soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
+    soft_max_salida_start = temp1
+    # soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
     soft_max_salida_start = keras.layers.Activation("softmax",name="Salida_start")(soft_max_salida_start )
 
     soft_max_salida_end = temp2
-    soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
+    # soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
     soft_max_salida_end = keras.layers.Activation("softmax",name="Salida_end")(soft_max_salida_end)
 
 
@@ -376,7 +376,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.0005,beta_2=0.98)
+    optim=keras.optimizers.Adam(lr=0.005,beta_2=0.98)
     model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
                                         metrics=[tf.keras.metrics.CategoricalAccuracy(),tf.keras.metrics.CategoricalAccuracy()])
     model.summary()
@@ -493,12 +493,12 @@ print("YA HICE EL MODELO")
 #
 
 path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-#
+
 import time
 t = time.time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = len(x)
+N = 5000#len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
@@ -507,7 +507,7 @@ salida=[y[:N,0],y[:N,1]]
 # entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
 #            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
 #            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
-
+#
 
 
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True)
@@ -520,19 +520,18 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-# model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
-# model.save_weights("modelo_prueba{}.hdf5".format(t))
-model.load_weights("local_model/model_e1-val_loss-0.0002.hdf5")
+
 path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 X_test,y_test = crear_batch(path,fragmented=False)
-# X_test,y_test = X_test[:10,:],y_test[:10,:]
+# # X_test,y_test = X_test[:10,:],y_test[:10,:]
 entrada = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
-# model.load_weights("local_model/model_e10-val_loss82.3117.hdf5")
+
 y_start,y_end = model.predict(entrada)
 
 
@@ -546,9 +545,13 @@ with open("y_pred_start","w+b") as f :
 #     y_end = pickle.load(f)
 # with open("y_pred_start","r+b") as f :
 #     y_start = pickle.load(f)
-
-
+#
+#
+#
+# with open("Y","r+b") as f :
+#         y_test = pickle.load(f)
+#
 
 #
 
-metric_(X_test,y_test,y_start,y_end)
+metric_(X_test,y_test,y_start,y_end,log_name=log_name)
