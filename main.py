@@ -54,12 +54,138 @@ del bert_layer
 #
 # vocab_file=b'C:\\Users\\LUISAL~1\\AppData\\Local\\Temp\\tfhub_modules\\88ac13afec2955fd14396e4582c251841b67429a\\assets\\vocab.txt'
 # tokenizer = FullTokenizer(vocab_file)
+def statistics(y_start,y_end,y_true):
+    import matplotlib.pyplot as plt
+    n = len(y_start.shape[0])
+    estadisticas_start = {}
+    estadisticas_end = {}
+    estadisticas_start_true = {}
+    estadisticas_end_true = {}
+
+    for i in range(n):
+        true_index = y_true[i]
+        true_ini = np.argmax(true_index[0])
+        true_end = np.argmax(true_index[1])
+        pred_ini = np.argmax(y_start[i, :])
+        estadisticas_start[pred_ini] = + 1
+        pred_end = np.argmax(y_end[i, :])
+        estadisticas_end[pred_end] = +1
+        estadisticas_start_true[true_ini]+=1
+        estadisticas_end_true[true_end]+=1
+    print("Estadisticas para las predicciones ")
+    print("INICIO")
+    print(estadisticas_start)
+    print("FINAL")
+    print(estadisticas_end)
+    plt.bar(estadisticas_start.keys(),estadisticas_start.values())
+    plt.title("predictions start")
+    plt.show()
+
+    plt.bar(estadisticas_end.keys(), estadisticas_end.values())
+    plt.title("Predictions end")
+    plt.show()
+
+    plt.bar(estadisticas_end_true.keys(), estadisticas_end_true.values())
+    plt.title("Labels end")
+    plt.show()
+    plt.bar(estadisticas_start_true.keys(), estadisticas_start_true.values())
+    plt.title("Labels start")
+    plt.show()
+
+
+
+
+
+    # labels1 = estadisticas_start_true.keys()
+    # labels2 = estadisticas_end_true.keys()
+    # men_means = estadisticas_start_true.values()
+    # women_means = estadisticas_end_true.values()
+    #
+    # x1 = labels1  # the label locations
+    # x2 = labels2
+    # width = 0.35  # the width of the bars
+    #
+    # fig, ax = plt.subplots()
+    #
+    # rects1 = ax.bar(x1 - width / 2, men_means, width, label="Start index")
+    # rects2 = ax.bar(x2 + width / 2, women_means, width, label='End index')
+    #
+    # # Add some text for labels, title and custom x-axis tick labels, etc.
+    # ax.set_ylabel('Frequency', fontsize=13)
+    # ax.set_title('Y predicted',fontsize=15)
+    # ax.set_xticks()
+    # ax.set_xticklabels(labels)
+    # ax.tick_params(labelsize=13)
+    # ax.legend(loc="upper left")
+    # plt.xticks(rotation=90)
+    #
+    # def autolabel(rects):
+    #     """Attach a text label above each bar in *rects*, displaying its height."""
+    #     for rect in rects:
+    #         height = rect.get_height()
+    #         ax.annotate('{:0.2f}'.format(height),
+    #                     xy=(rect.get_x() + rect.get_width() / 2, height),
+    #                     xytext=(0, 3),  # 3 points vertical offset
+    #                     textcoords="offset points",
+    #                     ha='center', va='bottom')
+    #
+    # autolabel(rects1)
+    # autolabel(rects2)
+    # fig.set_size_inches(11, 12)
+    # # fig.tight_layout()
+    # # plt.show()
+    # plt.savefig("predicted.pdf")
+    #
+    #
+    # labels1 = estadisticas_start_true.keys()
+    # labels2 = estadisticas_end_true.keys()
+    # men_means = estadisticas_start_true.values()
+    # women_means = estadisticas_end_true.values()
+    #
+    # x1 = labels1 # the label locations
+    # x2 = labels2
+    # width = 0.35  # the width of the bars
+    #
+    # fig, ax = plt.subplots()
+    #
+    # rects1 = ax.bar(x1 - width / 2, men_means, width, label="Start index")
+    # rects2 = ax.bar(x2 + width / 2, women_means, width, label='End index')
+    #
+    # # Add some text for labels, title and custom x-axis tick labels, etc.
+    # ax.set_ylabel('Frequency', fontsize=13)
+    # ax.set_title('Y true', fontsize=15)
+    # ax.set_xticks(x)
+    # ax.set_xticklabels(labels)
+    # ax.tick_params(labelsize=13)
+    # ax.legend(loc="upper left")
+    # plt.xticks(rotation=90)
+    #
+    # def autolabel(rects):
+    #     """Attach a text label above each bar in *rects*, displaying its height."""
+    #     for rect in rects:
+    #         height = rect.get_height()
+    #         ax.annotate('{:0.2f}'.format(height),
+    #                     xy=(rect.get_x() + rect.get_width() / 2, height),
+    #                     xytext=(0, 3),  # 3 points vertical offset
+    #                     textcoords="offset points",
+    #                     ha='center', va='bottom')
+    #
+    # autolabel(rects1)
+    # autolabel(rects2)
+    # fig.set_size_inches(11, 12)
+    # # fig.tight_layout()
+    # # plt.show()
+    # plt.savefig("true.pdf")
+
+
 def metric_(X,y_true,y_start,y_end,log_name):
     promedio_desempeno=0
     i=0
     N = X.shape[0]
     y_true=np.array(y_true)
     f = open(log_name,"w")
+    estadisticas_start = {}
+    estadisticas_end = {}
     for index in range(N):
         features = X[index,:]
         true_index = y_true[i]
@@ -71,7 +197,9 @@ def metric_(X,y_true,y_start,y_end,log_name):
         true_ini = np.argmax(true_index[0])
         true_end = np.argmax(true_index[1])
         pred_ini = np.argmax(y_start[i,:])
+        estadisticas_start[pred_ini] =+ 1
         pred_end = np.argmax(y_end[i,:])
+        estadisticas_end[pred_end] =+1
         A = set(range(true_ini,true_end))
         B = set(range(pred_ini,pred_end))
         denominator = len(A.union(B))
@@ -91,6 +219,10 @@ def metric_(X,y_true,y_start,y_end,log_name):
 
     f.write("\nPerformance promedio {}".format(promedio_desempeno))
     f.close()
+    print("estadisticas para indice de inicio: predicciones")
+    print(estadisticas_start)
+    print("estadisticas para indice final:  predicciones")
+    print(estadisticas_end)
 
 
 
@@ -323,7 +455,7 @@ def build_model(max_seq_length = 512 ):
     # attention_from_question_to_context += pes
 
 
-    temp = attention_from_context_to_question+attention_from_question_to_context
+    temp = keras.layers.Concatenate()([attention_from_context_to_question*attention_from_question_to_context,attention_from_context_to_question,attention_from_question_to_context])
     temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
     temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
@@ -376,9 +508,9 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.005,beta_2=0.98)
-    model.compile(optimizer=optim,loss=[create_metric(max_seq_length),create_metric(max_seq_length)],
-                                        metrics=[macro_f1,macro_f1])
+    optim=keras.optimizers.Adam(lr=0.00005)
+    model.compile(optimizer=optim,loss=[keras.losses.BinaryCrossentropy(),keras.losses.BinaryCrossentropy()],
+                                        metrics = [keras.metrics.Accuracy(),keras.metrics.Accuracy()])
     model.summary()
 
 
@@ -408,9 +540,9 @@ def create_metric(number_clases,label_smoothing=0):
 
     @tf.function
     def custom_metric(y_true,y_pred):
-        y_true =(1-label_smoothing)*y_true+ label_smoothing/number_clases
+
         multpli = tf.multiply(y_true,y_pred)
-        result = -keras.backend.mean(multpli)
+        result = -keras.backend.sum(multpli)
         return result
     return custom_metric
 
@@ -419,9 +551,9 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
         elems=len(glob.glob(path_to_features+"X_*"))
         indice=int(np.random.randint(0,elems,1))
         with open(path_to_features+"X_{}".format(indice),"r+b") as f:
-            X= np.array(pickle.load(f))
+            X  = np.array(pickle.load(f))
         with open(path_to_features+"Y_{}".format(indice),"r+b") as f:
-            Y= np.array(pickle.load(f))
+            Y = np.array(pickle.load(f))
         indices=np.random.randint(0,len(X),batchsize)
         return X[indices,:],Y[indices,:]
     else:
@@ -491,11 +623,12 @@ print("YA HICE EL MODELO")
 #         y_1 = np.array(example.features.feature['Y'].float_list.value)
 #         break
 #
-
+#
 path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 
 import time
-t = time.time()
+import datetime
+t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
 N = 5000#len(x)
@@ -504,12 +637,7 @@ entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_inpu
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
 salida=[y[:N,0],y[:N,1]]
 
-# entrada = {"questions_id": np.squeeze(X_test[:2000, 3]), "question_input_mask": np.squeeze(X_test[:2000, 4]),
-#            "question_segment_id": np.squeeze(X_test[:2000, 5]), "context_id": np.squeeze(X_test[:2000, 0]),
-#            "context_input_mask": np.squeeze(X_test[:2000, 1]), "context_segment_id": np.squeeze(X_test[:2000, 2])}
-#
-
-
+# 
 model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
@@ -520,7 +648,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start,reduce_learning],verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
@@ -540,7 +668,7 @@ with open("y_pred_end","w+b") as f :
 with open("y_pred_start","w+b") as f :
     pickle.dump(y_start,f)
 
-#
+
 # with open("y_pred_end","r+b") as f :
 #     y_end = pickle.load(f)
 # with open("y_pred_start","r+b") as f :
@@ -550,8 +678,8 @@ with open("y_pred_start","w+b") as f :
 #
 # with open("Y","r+b") as f :
 #         y_test = pickle.load(f)
+# #
 #
-
+# #
 #
-
-metric_(X_test,y_test,y_start,y_end,log_name=log_name)
+# metric_(X_test,y_test,y_start,y_end,log_name=log_name)
