@@ -509,7 +509,7 @@ def build_model(max_seq_length = 512 ):
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.00005)
-    model.compile(optimizer=optim,loss=[keras.losses.BinaryCrossentropy(),keras.losses.BinaryCrossentropy()],
+    model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(),keras.losses.CategoricalCrossentropy()],
                                         metrics = [keras.metrics.Accuracy(),keras.metrics.Accuracy()])
     model.summary()
 
