@@ -410,14 +410,14 @@ def build_model(max_seq_length = 512 ):
     context_pooled_output, context_sequence_output = bert_layer([context_input_word_ids, context_input_mask, context_segment_ids])
 
     activation = keras.activations.elu
-    substring=[i for i in url_uncased.split("_") if "H-" in i]
-    if substring==[]:
+    substring = [i for i in url_uncased.split("_") if "H-" in i]
+    if substring == []:
         dim = 128
     else:
         substring=substring[0]
-        dim=[int(s) for s in substring.split("-") if s.isdigit()][0]
+        dim = [int(s) for s in substring.split("-") if s.isdigit()][0]
 
-    similarity_matrix = 1 / ( dim** (1 / 2)) * tf.matmul(activation(question_sequence_output),activation(context_sequence_output),transpose_b=True,name="Attention_matmul")
+    similarity_matrix = 1 / (dim ** (1 / 2)) * tf.matmul(activation(question_sequence_output),activation(context_sequence_output),transpose_b=True,name="Attention_matmul")
     temp = tf.math.reduce_max(similarity_matrix, axis=1,keepdims=True,name="Reduction_of_similarity_function")
 
     temp = tf.math.softmax(temp)
@@ -429,13 +429,17 @@ def build_model(max_seq_length = 512 ):
     # new_representation = keras.layers.BatchNormalization()(new_representation)
     # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_start= LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_start = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_end =LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_end = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
 
-    # Hago el positional embedding
+    ##### Hago el positional embedding
+
+
+
+
     # pes = []
     # for i in range(max_seq_length):
     #     pes.append(positional_embedding(i, dim))
@@ -450,9 +454,6 @@ def build_model(max_seq_length = 512 ):
 
     #Sumo el positional embedding con cada una de las salidas
 
-    # attention_from_context_to_question += pes
-    # self_attention_context += pes
-    # attention_from_question_to_context += pes
 
 
     temp = attention_from_context_to_question*self_attention_context+attention_from_question_to_context
@@ -484,7 +485,7 @@ def build_model(max_seq_length = 512 ):
 
     # _,out=tf.shape(output_start).numpy()
 
-    # W1 = tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_start")
+    # W1 = tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_start")
     # W1 = init_weights(128,1)
     # output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
