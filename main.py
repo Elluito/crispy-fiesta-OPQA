@@ -455,7 +455,7 @@ def build_model(max_seq_length = 512 ):
     # attention_from_question_to_context += pes
 
 
-    temp = keras.layers.Concatenate()([attention_from_context_to_question*attention_from_question_to_context,attention_from_context_to_question,attention_from_question_to_context])
+    temp = attention_from_context_to_question*attention_from_question_to_context
     temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
     temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
@@ -626,7 +626,6 @@ print("YA HICE EL MODELO")
 #
 path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 
-import time
 import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
