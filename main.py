@@ -423,7 +423,7 @@ def build_model(max_seq_length = 512 ):
     temp = tf.math.softmax(temp)
     attention_from_question_to_context = tf.math.multiply(context_sequence_output, tf.transpose(temp,[0,2,1]))
     self_attention_context = keras.layers.Attention(name="Self_attention_paragraph")([context_sequence_output,context_sequence_output])
-    attention_from_context_to_question = keras.layers.Attention(name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output])
+    attention_from_context_to_question = keras.layers.Attention(use_scale=True,name="Attention_from_context_to_question")([context_sequence_output,question_sequence_output])
 
 
     # new_representation = keras.layers.BatchNormalization()(new_representation)
@@ -455,7 +455,7 @@ def build_model(max_seq_length = 512 ):
     # attention_from_question_to_context += pes
 
 
-    temp = attention_from_context_to_question*attention_from_question_to_context
+    temp = attention_from_context_to_question*self_attention_context+attention_from_question_to_context
     temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
     temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
@@ -508,9 +508,9 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.00005)
+    optim=keras.optimizers.Adam(lr=0.0005)
     model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(),keras.losses.CategoricalCrossentropy()],
-                                        metrics = [keras.metrics.Accuracy(),keras.metrics.Accuracy()])
+                                        metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
@@ -681,4 +681,4 @@ with open("y_pred_start","w+b") as f :
 #
 # #
 #
-# metric_(X_test,y_test,y_start,y_end,log_name=log_name)
+metric_(X_test,y_test,y_start,y_end,log_name=log_name)
