@@ -43,19 +43,19 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
 
 
 
-    if dataset=="squad":
-        if mode=="test":
+    if dataset == "squad":
+        if mode == "test":
             if fragmented:
                 i=0
                 if not os.listdir(PATH_TO_SQUAD+"test"):
 
 
-                    ids=[]
-                    X=[]
-                    y=[]
-                    f=open(PATH_TO_SQUAD+"dev-v1.1.json","r",encoding="utf8")
+                    ids = []
+                    X = []
+                    y = []
+                    f = open(PATH_TO_SQUAD+"dev-v1.1.json","r",encoding="utf8")
                     for line in f:
-                        temas=json.loads(line)["data"]
+                        temas = json.loads(line)["data"]
                         for temp in temas:
                             for cosa in temp["paragraphs"]:
                                 text = cosa["context"]
@@ -154,7 +154,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_start[first_index] = 1
                                     temp_y_end = np.zeros(max_seq_length)
                                     temp_y_end[last_index] = 1
-                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+
                                     X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
                                     y.append([temp_y_start, temp_y_end])
 
@@ -181,17 +181,8 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
 
                     return PATH_TO_SQUAD + "test/"
                 else:
-                    #
-                    # x_reader = open(PATH_TO_SQUAD + "test/" + "X", "r+b")
-                    # y_reader = open(PATH_TO_SQUAD + "test/" +"Y", "r+b")
-                    # ids_reader = open(PATH_TO_SQUAD + "test/" +"ids", "r+b")
 
-                    # X=pickle.load(x_reader)
-                    # y=pickle.load(y_reader)
-                    # ids=pickle.load(ids_reader)
-                    # x_reader.close()
-                    # y_reader.close()
-                    # ids_reader.close()
+
                     return PATH_TO_SQUAD + "test/"
 
 

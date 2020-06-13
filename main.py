@@ -1,12 +1,12 @@
 import glob
 import pickle
+from typing import List
 
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
 from official.nlp.bert.tokenization import FullTokenizer
-from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
@@ -410,11 +410,11 @@ def build_model(max_seq_length = 512 ):
     context_pooled_output, context_sequence_output = bert_layer([context_input_word_ids, context_input_mask, context_segment_ids])
 
     activation = keras.activations.elu
-    substring = [i for i in url_uncased.split("_") if "H-" in i]
-    if substring == []:
+    substring: List[str] = [i for i in url_uncased.split("_") if "H-" in i]
+    if [] == substring:
         dim = 128
     else:
-        substring=substring[0]
+        substring = substring[0]
         dim = [int(s) for s in substring.split("-") if s.isdigit()][0]
 
     similarity_matrix = 1 / (dim ** (1 / 2)) * tf.matmul(activation(question_sequence_output),activation(context_sequence_output),transpose_b=True,name="Attention_matmul")
@@ -429,11 +429,11 @@ def build_model(max_seq_length = 512 ):
     # new_representation = keras.layers.BatchNormalization()(new_representation)
     # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_start = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    # layer_decoder_start = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    layer_decoder_end = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    # layer_decoder_end = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
 
     ##### Hago el positional embedding
 
@@ -456,20 +456,20 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    temp = attention_from_context_to_question*self_attention_context+attention_from_question_to_context
-    temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
-    temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
+    temp = attention_from_context_to_question+attention_from_question_to_context
+    # temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
+    # temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
     # temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
 
     # soft_max_salida_start =keras.layers.Dense(max_seq_length)(attention_from_question_to_context)+ keras.layers.Dense(max_seq_length)(attention_from_context_to_question)+keras.layers.Dense(max_seq_length)(self_attention_context)
-    soft_max_salida_start = temp1
+    # soft_max_salida_start = temp1
     # soft_max_salida_start = keras.layers.BatchNormalization()(temp1)
-    soft_max_salida_start = keras.layers.Activation("softmax",name="Salida_start")(soft_max_salida_start )
+    # soft_max_salida_start = keras.layers.Activation("softmax",name="Salida_start")(soft_max_salida_start )
 
-    soft_max_salida_end = temp2
+    # soft_max_salida_end = temp2
     # soft_max_salida_end = keras.layers.BatchNormalization()(soft_max_salida_end)
-    soft_max_salida_end = keras.layers.Activation("softmax",name="Salida_end")(soft_max_salida_end)
+    # soft_max_salida_end = keras.layers.Activation("softmax",name="Salida_end")(soft_max_salida_end)
 
 
     # mid_start  = layer_encoder_start(new_representation)
@@ -485,18 +485,18 @@ def build_model(max_seq_length = 512 ):
 
     # _,out=tf.shape(output_start).numpy()
 
-    # W1 = tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_start")
+    W1 = tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_start")
     # W1 = init_weights(128,1)
     # output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    # W2=tf.keras.backend.variable(init_weights(128,1),dtype=tf.float32,name="weights_for_end")
+    W2=tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_end")
     # W2 =init_weights(128,1)
 
 
     #
-    # temp_start = tf.reshape(tf.matmul(output_start,W1),[-1,max_seq_length])
-    # temp_end = tf.reshape(tf.matmul(output_end,W2),[-1,max_seq_length])
+    temp_start = tf.reshape(tf.matmul(temp,W1),[-1,max_seq_length])
+    temp_end = tf.reshape(tf.matmul(temp,W2),[-1,max_seq_length])
     
 
 
@@ -506,11 +506,11 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ soft_max_salida_start,soft_max_salida_end],name="Luis_net")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ temp_start,temp_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.0005)
-    model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(),keras.losses.CategoricalCrossentropy()],
+    model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
                                         metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
     model.summary()
 
