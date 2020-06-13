@@ -7,6 +7,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_hub as hub
 from official.nlp.bert.tokenization import FullTokenizer
+from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
@@ -429,11 +430,11 @@ def build_model(max_seq_length = 512 ):
     # new_representation = keras.layers.BatchNormalization()(new_representation)
     # layer_encoder_start = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    # layer_decoder_start = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_start = LSTM(512, activation="tanh", return_sequences=True,input_shape=(max_seq_length, dim))
     #
     # layer_encoder_end = LSTM(1024, activation="tanh", return_sequences=True, input_shape=(max_seq_length, dim))
     #
-    # layer_decoder_end = LSTM(512, activation="tanh", input_shape=(max_seq_length, dim))
+    layer_decoder_end = LSTM(512, activation="tanh",return_sequences=True ,input_shape=(max_seq_length, 512))
 
     ##### Hago el positional embedding
 
@@ -457,8 +458,10 @@ def build_model(max_seq_length = 512 ):
 
 
     temp = attention_from_context_to_question+attention_from_question_to_context
-    # temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_start(temp)))
-    # temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(layer_decoder_end(temp)))
+    M1 = layer_decoder_start(temp)
+    M2 = layer_decoder_end(M1)
+    temp1 = keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(M1))
+    temp2 =keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(M2))
     # temp1  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
     # temp2  = keras.layers.Dense(max_seq_length,kernel_regularizer=keras.regularizers.l2(l=0.01))(tf.reshape(temp,[-1,max_seq_length*dim]))
 
@@ -485,18 +488,18 @@ def build_model(max_seq_length = 512 ):
 
     # _,out=tf.shape(output_start).numpy()
 
-    W1 = tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_start")
+    W1 = tf.keras.backend.variable(init_weights(max_seq_length,1),dtype=tf.float32,name="weights_for_start")
     # W1 = init_weights(128,1)
     # output_end=tf.reshape(output_for_end,[-1,max_seq_length,128])
     # _,out=tf.shape(output_end).numpy()
     # W2 = tf.keras.layers.Dense(max_seq_length,name="weights_for_end",activation="softmax")
-    W2=tf.keras.backend.variable(init_weights(dim,1),dtype=tf.float32,name="weights_for_end")
+    W2 = tf.keras.backend.variable(init_weights(max_seq_length,1),dtype=tf.float32,name="weights_for_end")
     # W2 =init_weights(128,1)
 
 
     #
-    temp_start = tf.reshape(tf.matmul(temp,W1),[-1,max_seq_length])
-    temp_end = tf.reshape(tf.matmul(temp,W2),[-1,max_seq_length])
+    temp_start = tf.reshape(tf.matmul(temp1,W1),[-1,max_seq_length])
+    temp_end = tf.reshape(tf.matmul(temp2,W2),[-1,max_seq_length])
     
 
 
