@@ -514,8 +514,10 @@ def build_model(max_seq_length = 512 ):
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.0005)
-    model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
-                                        metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
+    # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
+    #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
+    model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(from_logits=True),keras.losses.CategoricalCrossentropy(from_logits=True)],
+                  metrics=[keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
     model.summary()
 
 
