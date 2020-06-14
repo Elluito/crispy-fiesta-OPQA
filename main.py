@@ -497,8 +497,8 @@ def build_model(max_seq_length = 512 ):
     # W2 =init_weights(128,1)
 
 
-    temp_start = tf.keras.layers.Dense(max_seq_length)(tf.reshape(temp1,[-1,max_seq_length*2]))
-    temp_end =  tf.keras.layers.Dense(max_seq_length)(tf.reshape(temp2,[-1,max_seq_length*2]))
+    temp_start = tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp1,[-1,max_seq_length*2])))
+    temp_end =  tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp2,[-1,max_seq_length*2])))
     # temp_start = tf.reshape(tf.matmul(temp1,W1),[-1,max_seq_length])
     # temp_end = tf.reshape(tf.matmul(temp2,W2),[-1,max_seq_length])
     
