@@ -513,7 +513,7 @@ def build_model(max_seq_length = 512 ):
     model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ temp_start,temp_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
-    optim=keras.optimizers.Adam(lr=0.0005)
+    optim=keras.optimizers.Adam(lr=0.00005)
     # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
     #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
     model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(from_logits=True),keras.losses.CategoricalCrossentropy(from_logits=True)],
@@ -637,7 +637,7 @@ import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = 5000#len(x)
+N = len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
