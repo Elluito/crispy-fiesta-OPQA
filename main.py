@@ -510,7 +510,7 @@ def build_model(max_seq_length = 512 ):
 
 
 
-    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ temp1,temp2],name="Luis_net")
+    model = keras.Model(inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,context_input_mask, context_segment_ids], outputs=[ temp_start,temp_end],name="Luis_net")
 
     # model.build(input_shape=[None,None])
     optim=keras.optimizers.Adam(lr=0.0005)
