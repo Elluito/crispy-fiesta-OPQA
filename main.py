@@ -720,7 +720,7 @@ entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_inpu
 salida=[y[:N,0],y[:N,1]]
 
 #
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
