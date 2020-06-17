@@ -567,6 +567,9 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
+        temp_start = tf.nn.softmax(temp_start)
+        temp_end = tf.nn.softmax(temp_end)
+
         model = keras.Model(
             inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,
                     context_input_mask, context_segment_ids], outputs=[temp_start, temp_end], name="Luis_net")
