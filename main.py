@@ -11,7 +11,7 @@ from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
-from transformers import ModTransformer
+from transformers import ModTransformer, CustomSchedule
 
 print(tf.__version__)
 BATCH_SIZE = 10
@@ -562,8 +562,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
 
         temp = attention_from_context_to_question*self_attention_context + attention_from_question_to_context
-        T1 = ModTransformer(num_layers=2,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
-        T2 = ModTransformer(num_layers=2,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T1 = ModTransformer(num_layers=2,d_model=768,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T2 = ModTransformer(num_layers=2,d_model=768,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
@@ -572,11 +572,15 @@ def build_model(max_seq_length = 512 ,type="transformer"):
                     context_input_mask, context_segment_ids], outputs=[temp_start, temp_end], name="Luis_net")
 
         # model.build(input_shape=[None,None])
-        optim = keras.optimizers.Adam(lr=0.00005)
+        # optim = keras.optimizers.Adam(lr=0.00005)
         # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
         #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
-        model.compile(optimizer=optim, loss=[create_metric(),
-                                             create_metric()],
+        learning_rate = CustomSchedule(768)
+
+        optim = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98,
+                                             epsilon=1e-9)
+        model.compile(optimizer=optim, loss=[create_metric(max_seq_length),
+                                             create_metric(max_seq_length)],
                       metrics=[keras.metrics.CategoricalAccuracy(), keras.metrics.CategoricalAccuracy()])
         model.summary()
 

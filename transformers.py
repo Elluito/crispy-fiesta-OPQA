@@ -436,4 +436,4 @@ class ModTransformer(tf.keras.Model):
 
         final_output = self.final_layer(dec_output)  # (batch_size, tar_seq_len, output_dimesion)
 
-        return final_output, attention_weights
+        return final_output
