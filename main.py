@@ -579,8 +579,9 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
         #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
         learning_rate = CustomSchedule(768)
+        # temp_learning_rate_schedule = CustomSchedule(d_model)
 
-        optim = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98,
+        optim = tf.keras.optimizers.Adam(learning_rate=0.0005, beta_1=0.9, beta_2=0.98,
                                              epsilon=1e-9)
         model.compile(optimizer=optim, loss=[create_metric(max_seq_length),
                                              create_metric(max_seq_length)],
