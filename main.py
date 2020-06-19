@@ -714,14 +714,14 @@ import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = 20000#len(x)
+N = len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
 salida=[y[:N,0],y[:N,1]]
 
 #
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_V3_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_V4_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -731,7 +731,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback],verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=50,callbacks=[model_callback,early_callback_start],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
