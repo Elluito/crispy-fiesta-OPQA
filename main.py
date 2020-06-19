@@ -11,7 +11,7 @@ from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
-from transformers import ModTransformer, CustomSchedule
+from transformers import ModTransformer
 
 print(tf.__version__)
 BATCH_SIZE = 10
@@ -562,8 +562,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
 
         temp = attention_from_context_to_question*self_attention_context + attention_from_question_to_context
-        T1 = ModTransformer(num_layers=2,d_model=768,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
-        T2 = ModTransformer(num_layers=2,d_model=768,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T1 = ModTransformer(num_layers=2,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T2 = ModTransformer(num_layers=2,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
@@ -578,7 +578,7 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         # optim = keras.optimizers.Adam(lr=0.00005)
         # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
         #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
-        learning_rate = CustomSchedule(768)
+        # learning_rate = CustomSchedule(768)
         # temp_learning_rate_schedule = CustomSchedule(d_model)
 
         optim = tf.keras.optimizers.Adam(learning_rate=0.0005, beta_1=0.9, beta_2=0.98,
@@ -721,7 +721,7 @@ entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_inpu
 salida=[y[:N,0],y[:N,1]]
 
 #
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_V3_e{epoch}-val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -731,7 +731,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback,early_callback_start],verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=10,callbacks=[model_callback],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
