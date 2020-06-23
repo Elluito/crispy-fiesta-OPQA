@@ -562,8 +562,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
 
         temp = attention_from_context_to_question*self_attention_context + attention_from_question_to_context
-        T1 = ModTransformer(num_layers=2,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
-        T2 = ModTransformer(num_layers=2,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T1 = ModTransformer(num_layers=4,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T2 = ModTransformer(num_layers=4,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
@@ -714,7 +714,7 @@ import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = len(x)
+N = 10000#len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
