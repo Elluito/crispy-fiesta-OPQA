@@ -11,7 +11,7 @@ from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
-from transformers import ModTransformer
+from transformers_local import ModTransformer
 
 print(tf.__version__)
 BATCH_SIZE = 10
@@ -562,8 +562,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
 
         temp = attention_from_context_to_question*self_attention_context + attention_from_question_to_context
-        T1 = ModTransformer(num_layers=4,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
-        T2 = ModTransformer(num_layers=4,d_model=128,num_heads=2,dff=512,output_dimension=1,pe_input=10000,pe_target=10000)
+        T1 = ModTransformer(num_layers=2,d_model=512,num_heads=2,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
+        T2 = ModTransformer(num_layers=2,d_model=512,num_heads=2,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
