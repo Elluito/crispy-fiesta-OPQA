@@ -11,7 +11,7 @@ from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
 from reading_datasets import read_dataset
-from transformers_local import ModTransformer
+from transformers_local import ModTransformer, CustomSchedule
 
 print(tf.__version__)
 BATCH_SIZE = 10
@@ -562,8 +562,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
 
         temp = attention_from_context_to_question*self_attention_context + attention_from_question_to_context
-        T1 = ModTransformer(num_layers=2,d_model=512,num_heads=2,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
-        T2 = ModTransformer(num_layers=2,d_model=512,num_heads=2,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
+        T1 = ModTransformer(num_layers=4,d_model=768,num_heads=4,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
+        T2 = ModTransformer(num_layers=4,d_model=768,num_heads=4,dff=3072,output_dimension=1,pe_input=10000,pe_target=10000)
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
@@ -578,10 +578,10 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         # optim = keras.optimizers.Adam(lr=0.00005)
         # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
         #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
-        # learning_rate = CustomSchedule(768)
+        learning_rate = CustomSchedule(768)
         # temp_learning_rate_schedule = CustomSchedule(d_model)
 
-        optim = tf.keras.optimizers.Adam(learning_rate=0.0005, beta_1=0.9, beta_2=0.98,
+        optim = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.98,
                                              epsilon=1e-9)
         model.compile(optimizer=optim, loss=[keras.losses.CategoricalCrossentropy(),
                                              keras.losses.CategoricalCrossentropy()],
