@@ -731,7 +731,7 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=50,callbacks=[model_callback,early_callback_start],verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=25,callbacks=[model_callback],verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
