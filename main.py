@@ -581,7 +581,7 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         learning_rate = CustomSchedule(768)
         # temp_learning_rate_schedule = CustomSchedule(d_model)
 
-        optim = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.98,
+        optim = tf.keras.optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.98,
                                              epsilon=1e-9)
         model.compile(optimizer=optim, loss=[keras.losses.CategoricalCrossentropy(),
                                              keras.losses.CategoricalCrossentropy()],
