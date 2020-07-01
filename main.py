@@ -583,8 +583,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
         optim = tf.keras.optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.98,
                                              epsilon=1e-9)
-        model.compile(optimizer=optim, loss=[keras.losses.CategoricalCrossentropy(),
-                                             keras.losses.CategoricalCrossentropy()],
+        model.compile(optimizer=optim, loss=[create_metric(),
+                                             create_metric()],
                       metrics=[keras.metrics.CategoricalAccuracy(), keras.metrics.CategoricalAccuracy()])
         model.summary()
 
@@ -624,7 +624,8 @@ def create_metric(number_clases,label_smoothing=0):
 
     @tf.function
     def custom_metric(y_true,y_pred):
-
+        y_pred = keras.backend.clip(y_pred,1e-8,1-1e-8)
+        y_pred = keras.backend.log(y_pred)
         multpli = tf.multiply(y_true,y_pred)
         result = -tf.math.reduce_sum(multpli)
         return result
@@ -714,14 +715,14 @@ import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = len(x)
+N = 5000#len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
 salida=[y[:N,0],y[:N,1]]
 
 #
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
+# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -731,19 +732,24 @@ early_callback_start=tf.keras.callbacks.EarlyStopping(
 reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
     min_delta=0.0001, cooldown=0, min_lr=0)
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_split=0.1,epochs=100,callbacks=[model_callback],verbose=1)
+path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+X_test,y_test = crear_batch(path,fragmented=False)
+
+entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
+           "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
+           "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
+y_test=np.array(y_test)
+y_test =[y_test[:,0],y_test[:,1]]
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test],epochs=15,verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
 
-path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-X_test,y_test = crear_batch(path,fragmented=False)
-# # X_test,y_test = X_test[:10,:],y_test[:10,:]
-entrada = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
-           "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
-           "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
 
-y_start,y_end = model.predict(entrada)
+# # X_test,y_test = X_test[:10,:],y_test[:10,:]
+
+
+y_start,y_end = model.predict(entrada_test)
 
 
 with open("y_pred_end","w+b") as f :
