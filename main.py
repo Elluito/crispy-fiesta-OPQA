@@ -583,8 +583,8 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
         optim = tf.keras.optimizers.Adam(learning_rate=0.00005, beta_1=0.9, beta_2=0.98,
                                              epsilon=1e-9)
-        model.compile(optimizer=optim, loss=[create_metric(),
-                                             create_metric()],
+        model.compile(optimizer=optim, loss=[create_metric(max_seq_length),
+                                             create_metric(max_seq_length)],
                       metrics=[keras.metrics.CategoricalAccuracy(), keras.metrics.CategoricalAccuracy()])
         model.summary()
 
