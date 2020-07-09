@@ -395,7 +395,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
         # f.write("Log_end: " + str(y2.numpy()))
         f.close()
 
-def build_model(max_seq_length = 512 ,type="transformer"):
+def build_model(max_seq_length = 512 ,type="transformer",dataset="squad"):
     if type!= "transformer":
         question_input_word_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="questions_id")
         question_input_mask = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="question_input_mask")
@@ -406,7 +406,7 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         context_segment_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_segment_id")
 
 
-        bert_layer = hub.KerasLayer(url_uncased,trainable=False, name="Bert_variant_model")
+        bert_layer = hub.KerasLayer(url_uncased,trainable=True, name="Bert_variant_model")
 
         question_pooled_output, question_sequence_output = bert_layer([question_input_word_ids, question_input_mask, question_segment_ids])
 
@@ -498,9 +498,16 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         W2 = tf.Variable(init_weights(max_seq_length,1),trainable=True,dtype=tf.float32,name="weights_for_end")
         # W2 =init_weights(128,1)
 
+        if dataset == "squad":
 
-        temp_start = tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp1,[-1,max_seq_length*128])))
-        temp_end =  tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp2,[-1,max_seq_length*128])))
+            temp_start = tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp1,[-1,max_seq_length*128])))
+
+            temp_end = tf.keras.layers.Dense(max_seq_length)(keras.layers.Dropout(0.5)(tf.reshape(temp2,[-1,max_seq_length*128])))
+        elif dataset == "naturalq":
+            temp_start = tf.keras.layers.Dense(max_seq_length+2)(keras.layers.Dropout(0.5)(tf.reshape(temp1,[-1,max_seq_length*128])))
+
+            temp_end = tf.keras.layers.Dense(max_seq_length+2)(keras.layers.Dropout(0.5)(tf.reshape(temp2,[-1,max_seq_length*128])))
+
         # temp_start = tf.reshape(tf.matmul(temp1,W1),[-1,max_seq_length])
         # temp_end = tf.reshape(tf.matmul(temp2,W2),[-1,max_seq_length])
 
@@ -518,6 +525,7 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         optim=keras.optimizers.Adam(lr=0.00005)
         # model.compile(optimizer=optim,loss=[lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100) ,lambda y_true,y_pred : tf.nn.weighted_cross_entropy_with_logits(labels=y_true,logits = y_pred,pos_weight=100)],
         #                                     metrics = [keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
+
         model.compile(optimizer=optim,loss=[keras.losses.CategoricalCrossentropy(from_logits=True),keras.losses.CategoricalCrossentropy(from_logits=True)],
                       metrics=[keras.metrics.CategoricalAccuracy(),keras.metrics.CategoricalAccuracy()])
         model.summary()
@@ -533,7 +541,7 @@ def build_model(max_seq_length = 512 ,type="transformer"):
         context_input_mask = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_input_mask")
         context_segment_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_segment_id")
 
-        bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_variant_model")
+        bert_layer = hub.KerasLayer(url_uncased, trainable=True, name="Bert_variant_model")
 
         question_pooled_output, question_sequence_output = bert_layer(
             [question_input_word_ids, question_input_mask, question_segment_ids])
@@ -567,9 +575,17 @@ def build_model(max_seq_length = 512 ,type="transformer"):
 
         temp_start = tf.reshape(T1(temp),[-1,max_seq_length],name="salida_Start")
         temp_end = tf.reshape(T2(temp),[-1,max_seq_length],name="salida_End")
+
+        if dataset=="naturalq":
+
+            salida_yes_no_answer = keras.layers.Dense(2,activation="relu")(temp_start+temp_start)
+            temp_start = keras.layers.Concatenate()([temp_start,salida_yes_no_answer])
+            temp_end = keras.layers.Concatenate()([temp_start,salida_yes_no_answer])
+
+
+
         temp_start = tf.nn.softmax(temp_start)
         temp_end = tf.nn.softmax(temp_end)
-
         model = keras.Model(
             inputs=[question_input_word_ids, question_input_mask, question_segment_ids, context_input_word_ids,
                     context_input_mask, context_segment_ids], outputs=[temp_start, temp_end], name="Luis_net")
@@ -664,9 +680,12 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 # Later, when launching the model
 
 #
-max_seq_length = 350# Your choice here.
+max_seq_length = 350  # Your choice here.
+
+# path = read_dataset(dataset="naturalq",fragmented=False,tokenizer=tokenizer)
 
 print("VOY A HACER EL MODELO")
+
 
 # keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
 model = build_model(max_seq_length)
@@ -709,7 +728,7 @@ print("YA HICE EL MODELO")
 #         break
 #
 #
-path= read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+path = read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 
 import datetime
 t = datetime.datetime.now().time()
@@ -722,7 +741,7 @@ entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_inpu
 salida=[y[:N,0],y[:N,1]]
 
 #
-# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_val_loss_{val_loss:.4f}.hdf5",save_best_only=True,save_weights_only=True)
+model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_train_loss{loss:0.4f}_val_loss_{val_loss:.4f}.hdf5",save_weights_only=True)
 # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
 
 early_callback_start=tf.keras.callbacks.EarlyStopping(
@@ -738,7 +757,7 @@ X_test,y_test = crear_batch(path,fragmented=False)
 entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
-y_test=np.array(y_test)
+y_test = np.array(y_test)
 y_test_val =[y_test[:,0],y_test[:,1]]
 model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],epochs=50,verbose=2)
 
@@ -762,13 +781,7 @@ with open("y_pred_start","w+b") as f :
 #     y_end = pickle.load(f)
 # with open("y_pred_start","r+b") as f :
 #     y_start = pickle.load(f)
-#
-#
-#
 # with open("Y","r+b") as f :
 #         y_test = pickle.load(f)
-# #
-#
-# #
-#
+
 metric_(X_test,y_test,y_start,y_end,log_name=log_name)

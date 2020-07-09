@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+import re
 
 import numpy as np
 import tensorflow as tf
@@ -39,7 +40,7 @@ def convert_sentence_to_features(sentence, tokenizer, max_seq_len):
     return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
 
 
-def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_seq_length=512):
+def read_dataset(dataset="squad",mode="test",version="reduced",fragmented=True,tokenizer=None,max_seq_length=512):
 
 
 
@@ -187,10 +188,10 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
 
 
 
-        elif mode=="train":
+        elif mode == "train":
             if fragmented:
                 i = 0
-                if not os.listdir(PATH_TO_SQUAD + "test"):
+                if not os.listdir(PATH_TO_SQUAD + "train"):
 
                     ids = []
                     X = []
@@ -228,7 +229,7 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                     temp_y_end = np.zeros(max_seq_length)
                                     temp_y_end[last_index] = 1
                                     # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
-                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
+                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_segment])
                                     y.append([temp_y_start, temp_y_end])
 
                                     if np.array(X).itemsize * np.array(X).size > 1000000:
@@ -242,11 +243,8 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
                                         X = []
                                         y = []
                                         ids = []
-                    # X=np.array(X)
-                    # y=np.array(y)
-                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
 
-                    return PATH_TO_SQUAD + "test/"
+                    return PATH_TO_SQUAD + "train/"
                 else:
 
                     # x_reader = open(PATH_TO_SQUAD + "X_test", "r+b")
@@ -347,7 +345,385 @@ def read_dataset(dataset="squad",mode="test",fragmented=True,tokenizer=None,max_
 
 
     elif dataset == "naturalq":
-        pass
+        if mode == "test":
+            if fragmented:
+                i = 0
+                if not os.listdir(PATH_TO_NATURAL_QUESTIONS + "test"):
+
+                    ids = []
+                    X = []
+                    y = []
+                    f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-test.jsonl", "r", encoding="utf8")
+                    for line in f:
+                        temas = json.loads(line)["data"]
+                        for temp in temas:
+                            for cosa in temp["paragraphs"]:
+                                text = cosa["context"]
+                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+                                text_tokens = tokenizer.tokenize(text)
+                                if len(text_tokens) > max_seq_length:
+                                    continue
+                                for question in cosa["qas"]:
+                                    unique_id = question["id"]
+                                    ids.append(unique_id)
+                                    for ans in question["answers"]:
+                                        try:
+                                            if ans["text"] in text:
+                                                text_answer_list = tokenizer.tokenize(ans["text"])
+                                                indices = []
+                                                for token in text_answer_list:
+                                                    indices.append(list(text_tokens).index(token))
+                                                first_index = indices[0]
+                                                last_index = indices[-1]
+                                                break
+                                        except:
+                                            continue
+
+                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"],
+                                                                                           tokenizer, max_seq_length)
+                                    temp_y_start = np.zeros(max_seq_length)
+                                    temp_y_start[first_index] = 1
+                                    temp_y_end = np.zeros(max_seq_length)
+                                    temp_y_end[last_index] = 1
+                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
+                                    y.append([temp_y_start, temp_y_end])
+
+                                    if np.array(X).itemsize * np.array(X).size > 1000000:
+                                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "X_{}".format(i), "w+b")as f:
+                                            pickle.dump(X, f)
+                                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "Y_{}".format(i), "w+b")as f:
+                                            pickle.dump(y, f)
+                                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "ids_{}".format(i), "w+b")as f:
+                                            pickle.dump(ids, f)
+                                        i += 1
+                                        X = []
+                                        y = []
+                                        ids = []
+                    # X=np.array(X)
+                    # y=np.array(y)
+                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
+
+                    return PATH_TO_NATURAL_QUESTIONS + "test/"
+                else:
+
+                    # x_reader = open(PATH_TO_NATURAL_QUESTIONS + "X_test", "r+b")
+                    # y_reader = open(PATH_TO_NATURAL_QUESTIONS + "Y_test", "r+b")
+                    # ids_reader = open(PATH_TO_NATURAL_QUESTIONS + "ids_test", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_NATURAL_QUESTIONS + "test/"
+            else:
+                if not os.listdir(PATH_TO_NATURAL_QUESTIONS + "test"):
+                    ids = []
+                    X = []
+                    html_text = []
+                    y = []
+                    if version=="simplified":
+                        f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-test.jsonl", "r", encoding="utf8")
+                    else:
+                        f= open(PATH_TO_NATURAL_QUESTIONS + "v1.0-simplified_nq-dev-all.jsonl", "r", encoding="utf8")
+                    number_ignored = 0
+                    no_answer = 0
+                    i= 0
+                    for line in f:
+                        if i==0:
+                            print(line)
+                        temas = json.loads(line)
+
+                        question = temas["question_text"]
+                        text = temas["document_text"].lower()
+                        clean_text = cleanhtml(text)
+                        # for elem in temas["long_answer_candidates"]
+                        # annotations = temas["annotations"]
+                        # html_text.append(text)
+                        # byte_start_index = annotations["long_answer"]["start_byte"]
+                        # byte_end_index = annotations["long_answer"]["end_byte"]
+                        # if byte_end_index == -1 and byte_start_index == -1 and annotations["yes_no_answer"] == "NONE":
+                        #     number_ignored += 1
+                        #     no_answer += 1
+                        #     continue
+                        # long_answer = text[byte_start_index, byte_end_index]
+                        # tokenized_answer = tokenizer.tokenize(long_answer)
+                        clean_text = ' '.join(clean_text.split())
+                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+                        final_index = find_substring(clean_text, "see also")[-1][0]
+
+                        clean_text = clean_text[:final_index]
+
+                        # tokenized_text = tokenizer.tokenize(clean_text)
+                        #
+                        # #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+                        # answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                        #                   tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+                        #
+                        # if answer_indexes[-1] > 350 and annotations["yes_no_answer"] == "NONE":
+                        #     # I skip the text that do not have the answer on the first 350 tokens
+                        #     number_ignored += 1
+                        #     continue
+
+                        ids.append(temas["example_id"])
+                        # html_text.append(text)
+
+                        C_id, C_mask, C_segment = convert_sentence_to_features(clean_text, tokenizer, max_seq_length)
+
+                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question,
+                                                                               tokenizer, max_seq_length)
+
+
+                        # if annotations["yes_no_answer"] == "YES":
+                        #     temp_y_start[-2] = 1
+                        #     temp_y_end[-2] = 1
+                        #
+                        # elif annotations["yes_no_answer"] == "NO":
+                        #     temp_y_start[-1] = 1
+                        #     temp_y_end[-1] = 1
+                        #
+                        # if annotations["yes_no_answer"] == "NONE":
+                        #     temp_y_start[answer_indexes[0]] = 1
+                        #     temp_y_end[answer_indexes[-1]] = 1
+
+                        X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_segment])
+
+                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "X", "w+b")as f:
+                            pickle.dump(X, f)
+                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "html_text", "w+b")as f:
+                            pickle.dump(html_text, f)
+                        with open(PATH_TO_NATURAL_QUESTIONS + "test/" + "ids", "w+b")as f:
+                            pickle.dump(ids, f)
+
+                    return PATH_TO_NATURAL_QUESTIONS + "test/"
+                else:
+
+                    return PATH_TO_NATURAL_QUESTIONS + "test/"
+
+
+
+        elif mode == "train":
+            if fragmented:
+                i = 0
+                if not os.listdir(PATH_TO_NATURAL_QUESTIONS + "train"):
+
+                    ids = []
+                    X = []
+                    y = []
+                    f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-train.jsonl", "r", encoding="utf8")
+                    number_ignored = 0
+                    no_answer = 0
+                    for line in f:
+                        temas = json.loads(line)
+
+                        question = temas["question_text"]
+                        text = temas["document_text"].lower()
+                        clean_text = cleanhtml(text)
+                        annotations = temas["annotations"]
+
+                        byte_start_index = annotations["long_answer"]["start_byte"]
+                        byte_end_index = annotations["long_answer"]["end_byte"]
+                        if byte_end_index == -1 and byte_start_index == -1 and annotations["yes_no_answer"] == "NONE":
+                            number_ignored += 1
+                            no_answer += 1
+                            continue
+                        long_answer = text[byte_start_index, byte_end_index]
+                        tokenized_answer = tokenizer.tokenize(long_answer)
+                        clean_text = ' '.join(clean_text.split())
+                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+                        final_index = find_substring(clean_text, "see also")[-1][0]
+
+                        clean_text = clean_text[:final_index]
+
+                        tokenized_text = tokenizer.tokenize(clean_text)
+
+                        #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                                          tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+
+                        if answer_indexes[-1] > 350 and annotations["yes_no_answer"] == "NONE":
+                            # I skip the text that do not have the answer on the first 350 token
+                            number_ignored += 1
+                            continue
+
+                        ids.append(temas["example_id"])
+                        # html_text.append(text)
+
+                        C_id, C_mask, C_segment = convert_sentence_to_features(clean_text, tokenizer, max_seq_length)
+
+                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question,
+                                                                               tokenizer, max_seq_length)
+                        temp_y_start = np.zeros(max_seq_length + 2)
+                        temp_y_end = np.zeros(max_seq_length + 2)
+
+                        if annotations["yes_no_answer"] == "YES":
+                            temp_y_start[-2] = 1
+                            temp_y_end[-2] = 1
+
+                        elif annotations["yes_no_answer"] == "NO":
+                            temp_y_start[-1] = 1
+                            temp_y_end[-1] = 1
+
+                        if annotations["yes_no_answer"] == "NONE":
+                            temp_y_start[answer_indexes[0]] = 1
+                            temp_y_end[answer_indexes[-1]] = 1
+
+                        X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_segment])
+                        y.append([temp_y_start, temp_y_end])
+
+                        if np.array(X).itemsize * np.array(X).size > 1000000:
+                            with open(PATH_TO_NATURAL_QUESTIONS + "train/" + "X_{}".format(i), "w+b")as f:
+                                pickle.dump(X, f)
+                            with open(PATH_TO_NATURAL_QUESTIONS + "train/" + "Y_{}".format(i), "w+b")as f:
+                                pickle.dump(y, f)
+                            with open(PATH_TO_NATURAL_QUESTIONS + "train/" + "ids_{}".format(i), "w+b")as f:
+                                pickle.dump(ids, f)
+                            i += 1
+                            X = []
+                            y = []
+                            ids = []
+
+                    return PATH_TO_NATURAL_QUESTIONS + "train/"
+                else:
+
+                    # x_reader = open(PATH_TO_NATURAL_QUESTIONS + "X_test", "r+b")
+                    # y_reader = open(PATH_TO_NATURAL_QUESTIONS + "Y_test", "r+b")
+                    # ids_reader = open(PATH_TO_NATURAL_QUESTIONS + "ids_test", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_NATURAL_QUESTIONS + "test/"
+
+            else:
+                if not os.path.exists(PATH_TO_NATURAL_QUESTIONS + "train/" + "X") and not os.path.exists(
+                        PATH_TO_NATURAL_QUESTIONS + "train/" + "Y") and not os.path.exists(PATH_TO_NATURAL_QUESTIONS + "train/" + "ids"):
+
+                    ids = []
+                    X = []
+                    y = []
+                    # html_text = []
+                    f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-train.jsonl", "r", encoding="utf8")
+                    number_ignored = 0
+                    no_answer =0
+
+                    for line in f:
+                        temas = json.loads(line)
+
+                        question = temas["question_text"]
+                        text = temas["document_text"].lower()
+                        clean_text = cleanhtml(text)
+                        annotations = temas["annotations"]
+
+                        byte_start_index = annotations["long_answer"]["start_byte"]
+                        byte_end_index = annotations["long_answer"]["end_byte"]
+                        if byte_end_index ==-1 and byte_start_index==-1 and annotations["yes_no_answer"]=="NONE":
+                            number_ignored += 1
+                            no_answer += 1
+                            continue
+                        long_answer = text[byte_start_index, byte_end_index]
+                        tokenized_answer = tokenizer.tokenize(long_answer)
+                        clean_text = ' '.join(clean_text.split())
+                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+                        final_index = find_substring(clean_text, "see also")[-1][0]
+
+                        clean_text = clean_text[:final_index]
+
+                        tokenized_text = tokenizer.tokenize(clean_text)
+
+                        #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                                          tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+
+                        if answer_indexes[-1] > 350 and annotations["yes_no_answer"] == "NONE":
+                            # I skip the text that do not have the answer on the first 350 token
+                            number_ignored += 1
+                            continue
+
+                        ids.append(temas["example_id"])
+                        # html_text.append(text)
+
+
+
+
+
+                        C_id, C_mask, C_segment = convert_sentence_to_features(clean_text, tokenizer, max_seq_length)
+
+
+                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question,
+                                                                                           tokenizer, max_seq_length)
+                        temp_y_start = np.zeros(max_seq_length+2)
+                        temp_y_end = np.zeros(max_seq_length+2)
+
+                        if annotations["yes_no_answer"] == "YES":
+                            temp_y_start[-2] = 1
+                            temp_y_end[-2] = 1
+
+                        elif annotations["yes_no_answer"] == "NO":
+                            temp_y_start[-1] = 1
+                            temp_y_end[-1] = 1
+
+                        if annotations["yes_no_answer"] == "NONE":
+                            temp_y_start[answer_indexes[0]] = 1
+                            temp_y_end[answer_indexes[-1]] = 1
+
+                        X.append([C_id, C_mask, C_segment, Q_id, Q_mask,  Q_segment])
+                        y.append([temp_y_start, temp_y_end])
+
+
+                    x_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "X", "w+b")
+                    y_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "Y", "w+b")
+                    ids_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "ids", "w+b")
+                    # original_texts_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "original_text", "w+b")
+
+                    pickle.dump(X, x_writer)
+                    pickle.dump(y, y_writer)
+                    pickle.dump(ids, ids_writer)
+                    x_writer.close()
+                    y_writer.close()
+                    ids_writer.close()
+                    print("")
+                    return PATH_TO_NATURAL_QUESTIONS + "train/"
+                else:
+
+                    # x_reader = open(PATH_TO_NATURAL_QUESTIONS +"train/"+ "X", "r+b")
+                    # y_reader = open(PATH_TO_NATURAL_QUESTIONS +"train/"+ "Y", "r+b")
+                    # ids_reader = open(PATH_TO_NATURAL_QUESTIONS +"train/"+ "ids", "r+b")
+                    #
+                    # X=pickle.load(x_reader)
+                    # y=pickle.load(y_reader)
+                    # ids=pickle.load(ids_reader)
+                    # x_reader.close()
+                    # y_reader.close()
+                    # ids_reader.close()
+                    return PATH_TO_NATURAL_QUESTIONS + "train/"
+
+
+
+
+def cleanhtml(raw_html):
+  cleanr = re.compile('<.*?>')
+  cleantext = re.sub(cleanr, '', raw_html)
+
+  return cleantext
+def find_substring(string,substring):
+    indexes=[]
+    for m in re.finditer(substring, string):
+             indexes.append((m.start(), m.end()))
+    return indexes
+def unify_token(tokens):
+    newlist=[]
+    for elem in tokens:
+        if "##" in elem:
+            newlist[-1] = newlist[-1].strip() + elem.replace("##","")
+        else:
+            newlist.append(elem)
+    return newlist
 def _bytes_feature(value):
   """Returns a bytes_list from a string / byte."""
   if isinstance(value, type(tf.constant(0))):
