@@ -541,7 +541,7 @@ def build_model(max_seq_length = 512 ,type="transformer",dataset="squad"):
         context_input_mask = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_input_mask")
         context_segment_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32, name="context_segment_id")
 
-        bert_layer = hub.KerasLayer(url_uncased, trainable=True, name="Bert_variant_model")
+        bert_layer = hub.KerasLayer(url_uncased, trainable=False, name="Bert_variant_model")
 
         question_pooled_output, question_sequence_output = bert_layer(
             [question_input_word_ids, question_input_mask, question_segment_ids])
