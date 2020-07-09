@@ -759,7 +759,7 @@ entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "ques
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
 y_test = np.array(y_test)
 y_test_val =[y_test[:,0],y_test[:,1]]
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],epochs=50,verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=6,verbose=2)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
