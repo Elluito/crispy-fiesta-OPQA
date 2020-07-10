@@ -734,7 +734,7 @@ import datetime
 t = datetime.datetime.now().time()
 log_name = "Salida_modelo_{}.txt".format(t)
 x,y = crear_batch(path,fragmented=False)
-N = 5000#len(x)
+N = len(x)
 entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
@@ -759,7 +759,7 @@ entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "ques
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
 y_test = np.array(y_test)
 y_test_val =[y_test[:,0],y_test[:,1]]
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=6,verbose=2)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=10,verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
