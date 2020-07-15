@@ -377,7 +377,7 @@ def train_model(model,path_to_features,log_name,model_name,batch_size=32,step_pe
             epoch_accuracy_start(y[:,0],y1)
             epoch_accuracy_end(y[:, 1], y2)
             # print("Log_end: " + str(y2.numpy()))
-        if epoch%10 == 0:
+        if epoch % 10 == 0:
             model.save(model_name)
 
 
@@ -666,6 +666,46 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 
         return X, Y
 
+def create_predictions_naturalq(original_html,ids,x,tokenizer,y_start,y_end):
+
+    """
+     {'predictions': [
+    {
+      'example_id': -2226525965842375672,
+      'long_answer': {
+        'start_byte': 62657, 'end_byte': 64776,
+        'start_token': 391, 'end_token': 604
+      },
+      'long_answer_score': 13.5,
+      'short_answers': [
+        {'start_byte': 64206, 'end_byte': 64280,
+         'start_token': 555, 'end_token': 560}, ...],
+      'short_answers_score': 26.4,
+      'yes_no_answer': 'NONE'
+    }, ... ]
+  }
+    """
+    predictions = []
+
+    for i in range(len(ids)):
+        dictionary = {}
+        dictionary["example_id"] = ids[i]
+        example_ids = x[i]
+        example_tokens = tokenizer.convert_ids_to_tokens(example_ids)
+        i_start = np.argmax(y_start[i])
+        i_end = np.argmax(y_end[i])
+        if i_end < i_start:
+            long_answer = example_tokens[i_end,i_start]
+        else:
+            long_answer = example_tokens[i_start, i_end]
+
+        lowered_html = original_html[i].lower()
+        tokenized_html = tokenizer.tokenize(lowered_html)
+        answer_indexes = [(i, i + len(long_answer)) for i in range(len(tokenized_html)) if
+                          tokenized_html[i:i + len(long_answer)] == long_answer]
+
+
+    pass
 
 
 
@@ -682,7 +722,7 @@ def crear_batch(path_to_features,fragmented=False,batchsize=32):
 #
 max_seq_length = 350  # Your choice here.
 
-# path = read_dataset(dataset="naturalq",fragmented=False,tokenizer=tokenizer)
+path = read_dataset(dataset="naturalq",fragmented=False,tokenizer=tokenizer)
 
 print("VOY A HACER EL MODELO")
 
@@ -728,7 +768,7 @@ print("YA HICE EL MODELO")
 #         break
 #
 #
-path = read_dataset(mode="train",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 
 import datetime
 t = datetime.datetime.now().time()
@@ -759,7 +799,7 @@ entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "ques
            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
 y_test = np.array(y_test)
 y_test_val =[y_test[:,0],y_test[:,1]]
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=10,verbose=1)
+model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=3,verbose=1)
 
 # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
 #
