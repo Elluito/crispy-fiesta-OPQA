@@ -722,7 +722,7 @@ def create_predictions_naturalq(original_html,ids,x,tokenizer,y_start,y_end):
 #
 max_seq_length = 350  # Your choice here.
 
-path = read_dataset(dataset="naturalq",fragmented=False,tokenizer=tokenizer)
+path = read_dataset(dataset="naturalq",mode="train",fragmented=False,tokenizer=tokenizer)
 
 print("VOY A HACER EL MODELO")
 
@@ -769,59 +769,59 @@ print("YA HICE EL MODELO")
 #
 #
 path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-
-import datetime
-t = datetime.datetime.now().time()
-log_name = "Salida_modelo_{}.txt".format(t)
-x,y = crear_batch(path,fragmented=False)
-N = len(x)
-entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
-           "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
-           "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
-salida=[y[:N,0],y[:N,1]]
-
 #
-model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_train_loss{loss:0.4f}_val_loss_{val_loss:.4f}.hdf5",save_weights_only=True)
-# tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
-
-early_callback_start=tf.keras.callbacks.EarlyStopping(
-    monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
-)
-# model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
-reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
-    monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
-    min_delta=0.0001, cooldown=0, min_lr=0)
-path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
-X_test,y_test = crear_batch(path,fragmented=False)
-
-entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
-           "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
-           "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
-y_test = np.array(y_test)
-y_test_val =[y_test[:,0],y_test[:,1]]
-model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=3,verbose=1)
-
-# # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+# import datetime
+# t = datetime.datetime.now().time()
+# log_name = "Salida_modelo_{}.txt".format(t)
+# x,y = crear_batch(path,fragmented=False)
+# N = len(x)
+# entrada = {"questions_id": np.squeeze(x[:N, 3].astype(np.int32)), "question_input_mask": np.squeeze(x[:N, 4].astype(np.int32)),
+#            "question_segment_id": np.squeeze(x[:N, 5].astype(np.int32)), "context_id": np.squeeze(x[:N, 0].astype(np.int32)),
+#            "context_input_mask": np.squeeze(x[:N, 1].astype(np.int32)), "context_segment_id": np.squeeze(x[:N, 2].astype(np.int32))}
+# salida=[y[:N,0],y[:N,1]]
 #
-
-
-# # X_test,y_test = X_test[:10,:],y_test[:10,:]
-
-
-y_start,y_end = model.predict(entrada_test)
-
-
-with open("y_pred_end","w+b") as f :
-    pickle.dump(y_end,f)
-with open("y_pred_start","w+b") as f :
-    pickle.dump(y_start,f)
-
-
-# with open("y_pred_end","r+b") as f :
-#     y_end = pickle.load(f)
-# with open("y_pred_start","r+b") as f :
-#     y_start = pickle.load(f)
-# with open("Y","r+b") as f :
-#         y_test = pickle.load(f)
-
-metric_(X_test,y_test,y_start,y_end,log_name=log_name)
+# #
+# model_callback=tf.keras.callbacks.ModelCheckpoint("local_model/model_transformer_real_train_loss{loss:0.4f}_val_loss_{val_loss:.4f}.hdf5",save_weights_only=True)
+# # tensor_callback=keras.callbacks.TensorBoard("logs",batch_size=5)
+#
+# early_callback_start=tf.keras.callbacks.EarlyStopping(
+#     monitor="val_loss", patience=3, verbose=0, mode='auto', restore_best_weights=True
+# )
+# # model.load_weights("local_model/model_e2-val_loss7.0668.hdf5")
+# reduce_learning = tf.keras.callbacks.ReduceLROnPlateau(
+#     monitor='val_loss', factor=0.1, patience=1, verbose=1, mode='auto',
+#     min_delta=0.0001, cooldown=0, min_lr=0)
+# path = read_dataset(mode="test",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+# X_test,y_test = crear_batch(path,fragmented=False)
+#
+# entrada_test = {"questions_id": np.squeeze(X_test[:, 3].astype(np.int32)), "question_input_mask": np.squeeze(X_test[:, 4].astype(np.int32)),
+#            "question_segment_id": np.squeeze(X_test[:, 5].astype(np.int32)), "context_id": np.squeeze(X_test[:, 0].astype(np.int32)),
+#            "context_input_mask": np.squeeze(X_test[:, 1].astype(np.int32)), "context_segment_id": np.squeeze(X_test[:, 2].astype(np.int32))}
+# y_test = np.array(y_test)
+# y_test_val =[y_test[:,0],y_test[:,1]]
+# model.fit(entrada,salida,batch_size=BATCH_SIZE,validation_data=[entrada_test,y_test_val],callbacks=[model_callback],epochs=3,verbose=1)
+#
+# # # train_model(model,path_to_features=path,model_name="model_{}.h5".format(t),batch_size=7,epochs=1,log_name=log_name)
+# #
+#
+#
+# # # X_test,y_test = X_test[:10,:],y_test[:10,:]
+#
+#
+# y_start,y_end = model.predict(entrada_test)
+#
+#
+# with open("y_pred_end","w+b") as f :
+#     pickle.dump(y_end,f)
+# with open("y_pred_start","w+b") as f :
+#     pickle.dump(y_start,f)
+#
+#
+# # with open("y_pred_end","r+b") as f :
+# #     y_end = pickle.load(f)
+# # with open("y_pred_start","r+b") as f :
+# #     y_start = pickle.load(f)
+# # with open("Y","r+b") as f :
+# #         y_test = pickle.load(f)
+#
+# metric_(X_test,y_test,y_start,y_end,log_name=log_name)

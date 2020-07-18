@@ -522,8 +522,13 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-train.jsonl", "r", encoding="utf8")
                     number_ignored = 0
                     no_answer = 0
+                    i=0
+                    archivo_pequeño=[]
                     for line in f:
                         temas = json.loads(line)
+                        if i <500:
+                            archivo_pequeño.append(temas)
+
 
                         question = temas["question_text"]
                         text = temas["document_text"].lower()
@@ -621,10 +626,12 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     f = open(PATH_TO_NATURAL_QUESTIONS + "simplified-nq-train.jsonl", "r", encoding="utf8")
                     number_ignored = 0
                     no_answer =0
-
+                    i = 0
+                    archivo_pequeno = []
                     for line in f:
                         temas = json.loads(line)
-
+                        if i < 500:
+                            archivo_pequeno.append(temas)
                         question = temas["question_text"]
                         text = temas["document_text"].lower()
                         clean_text = cleanhtml(text)
@@ -636,7 +643,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                             number_ignored += 1
                             no_answer += 1
                             continue
-                        long_answer = text[byte_start_index: byte_end_index]
+                        long_answer = text[byte_start_index, byte_end_index]
                         tokenized_answer = tokenizer.tokenize(long_answer)
                         clean_text = ' '.join(clean_text.split())
                         # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
@@ -645,12 +652,13 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         clean_text = clean_text[:final_index]
 
                         tokenized_text = tokenizer.tokenize(clean_text)
-
+                        initial_index, final_index = find_answer_index(clean_text, tokenized_answer, mode=2)
+                        tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
-                        # answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
-                        #                   tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
-                        answer_indexes =find_answer_index(clean_text,tokenized_answer)
-                        if answer_indexes[-1] > 350 and annotations["yes_no_answer"] == "NONE":
+                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                                          tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+
+                        if answer_indexes[-1] > max_seq_length and annotations["yes_no_answer"] == "NONE":
                             # I skip the text that do not have the answer on the first 350 token
                             number_ignored += 1
                             continue
@@ -690,14 +698,15 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     y_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "Y", "w+b")
                     ids_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "ids", "w+b")
                     # original_texts_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "original_text", "w+b")
-
+                    with  open("muestra_entrenamiento", "w+b")as f:
+                        pickle.dump(archivo_pequeno, f)
                     pickle.dump(X, x_writer)
                     pickle.dump(y, y_writer)
                     pickle.dump(ids, ids_writer)
                     x_writer.close()
                     y_writer.close()
                     ids_writer.close()
-                    print("")
+
                     return PATH_TO_NATURAL_QUESTIONS + "train/"
                 else:
 
@@ -806,7 +815,7 @@ def find_answer_index(html_text, answer_tokens, mode=1):
         for match in matches:
             distance = levenshtein(answer_string,match)
             if distance < minmun_distance:
-                minmun_distance =distance
+                minmun_distance = distance
                 best_match = match
 
         start_index = html_text.index(best_match)
@@ -832,7 +841,7 @@ def find_answer_index(html_text, answer_tokens, mode=1):
         best_match = " ".join(best_match.split())
 
         start_index = html_text.index(best_match)
-        return start_index, start_index + len(best_match)
+        return start_index, start_index + len(best_match)-1
     else:
         raise Exception("Este modeo no es adimitido")
 
