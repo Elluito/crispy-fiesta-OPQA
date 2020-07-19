@@ -9,8 +9,8 @@ import tensorflow as tf
 PATH_TO_SQUAD ="datasets/Squad/"
 PATH_TO_NARRATIVEQA_SHORT ="datasets/NARRATIVEQA/"
 PATH_TO_NARRATIVEQA_FULL ="datasets/NARRATIVEQA/"
-PATH_TO_NATURAL_QUESTIONS ="D:\datsets_tesis\Kaggle_competition\Tensorflow_Q_and_A_competition/"
-# PATH_TO_NATURAL_QUESTIONS ="datsets/Natural_Q_dataset/Tensorflow_Q_and_A_competition/"
+# PATH_TO_NATURAL_QUESTIONS ="D:\datsets_tesis\Kaggle_competition\Tensorflow_Q_and_A_competition/"
+PATH_TO_NATURAL_QUESTIONS ="datsets/Natural_Q_dataset/Tensorflow_Q_and_A_competition/"
 import string
 feature_description = {
     'context_id': tf.io.FixedLenFeature([],tf.int64, default_value=0),
