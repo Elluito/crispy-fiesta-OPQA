@@ -526,6 +526,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     archivo_pequeño=[]
                     for line in f:
                         temas = json.loads(line)
+                        print(temas)
                         if i <500:
                             archivo_pequeño.append(temas)
 
