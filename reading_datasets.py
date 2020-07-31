@@ -639,13 +639,16 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         clean_text = cleanhtml(text)
                         annotations = temas["annotations"]
 
-                        byte_start_index = annotations["long_answer"]["start_byte"]
-                        byte_end_index = annotations["long_answer"]["end_byte"]
-                        if byte_end_index ==-1 and byte_start_index==-1 and annotations["yes_no_answer"]=="NONE":
+                        byte_start_index = annotations[0]["long_answer"]["start_token"]
+                        byte_end_index = annotations[0]["long_answer"]["end_token"]
+
+                        if byte_end_index ==-1 and byte_start_index==-1 and annotations["yes_no_answer"] =="NONE":
                             number_ignored += 1
                             no_answer += 1
                             continue
-                        long_answer = text[byte_start_index, byte_end_index]
+                        ## SOn tokens lo que representan los indices
+                        long_answer = text.split()[byte_start_index: byte_end_index]
+                        long_answer = convert2string(long_answer)
                         tokenized_answer = tokenizer.tokenize(long_answer)
                         clean_text = ' '.join(clean_text.split())
                         # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
@@ -655,7 +658,10 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
 
                         tokenized_text = tokenizer.tokenize(clean_text)
                         initial_index, final_index = find_answer_index(clean_text, tokenized_answer, mode=2)
+
                         tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
+
+
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
@@ -790,7 +796,7 @@ def levenshtein(seq1, seq2):
 def convert2string(tokens):
     clean_tokens = unify_token(tokens)
     salida = ""
-    result = string.punctuation
+
     for elem in clean_tokens:
         if elem in ".":
             salida += elem
