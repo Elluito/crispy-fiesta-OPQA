@@ -10,7 +10,7 @@ from official.nlp.bert.tokenization import FullTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
-from reading_datasets import prueba
+from reading_datasets import read_dataset
 from transformers_local import ModTransformer, CustomSchedule
 
 print(tf.__version__)
@@ -768,7 +768,7 @@ max_seq_length = 350  # Your choice here.
 #         break
 #
 #
-# path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 #
 # import datetime
 # t = datetime.datetime.now().time()
@@ -825,5 +825,5 @@ max_seq_length = 350  # Your choice here.
 # #         y_test = pickle.load(f)
 #
 # metric_(X_test,y_test,y_start,y_end,log_name=log_name)
-prueba()
+
 
