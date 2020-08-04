@@ -10,7 +10,7 @@ from official.nlp.bert.tokenization import FullTokenizer
 from tensorflow.keras.layers import LSTM
 
 # from official.nlp.bert.bert_models import *
-from reading_datasets import read_dataset
+from reading_datasets import prueba
 from transformers_local import ModTransformer, CustomSchedule
 
 print(tf.__version__)
@@ -722,16 +722,16 @@ def create_predictions_naturalq(original_html,ids,x,tokenizer,y_start,y_end):
 #
 max_seq_length = 350  # Your choice here.
 
-path = read_dataset(dataset="naturalq",mode="train",fragmented=False,tokenizer=tokenizer)
-
-print("VOY A HACER EL MODELO")
-
-
-# keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
-model = build_model(max_seq_length)
-
-print("YA HICE EL MODELO")
-
+# path = read_dataset(dataset="naturalq",mode="train",fragmented=False,tokenizer=tokenizer)
+#
+# print("VOY A HACER EL MODELO")
+#
+#
+# # keras.backend.get_session().run(tf.compat.v1.global_variables_initializer())
+# model = build_model(max_seq_length)
+#
+# print("YA HICE EL MODELO")
+#
 
 
 
@@ -768,7 +768,7 @@ print("YA HICE EL MODELO")
 #         break
 #
 #
-path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
+# path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_length=max_seq_length,fragmented=False)
 #
 # import datetime
 # t = datetime.datetime.now().time()
@@ -825,3 +825,5 @@ path = read_dataset(mode="train",dataset="naturalq",tokenizer=tokenizer,max_seq_
 # #         y_test = pickle.load(f)
 #
 # metric_(X_test,y_test,y_start,y_end,log_name=log_name)
+prueba()
+

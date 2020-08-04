@@ -5,6 +5,8 @@ import re
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_hub as hub
+from official.nlp.bert.tokenization import FullTokenizer
 
 PATH_TO_SQUAD ="datasets/Squad/"
 PATH_TO_NARRATIVEQA_SHORT ="datasets/NARRATIVEQA/"
@@ -24,6 +26,24 @@ feature_description = {
 def convert_sentence_to_features(sentence, tokenizer, max_seq_len):
     tokens = ['[CLS]']
     tokens.extend(tokenizer.tokenize(sentence))
+    if len(tokens) > max_seq_len - 1:
+        tokens = tokens[:max_seq_len - 1]
+    tokens.append('[SEP]')
+
+    segment_ids = [0] * len(tokens)
+    input_ids = tokenizer.convert_tokens_to_ids(tokens)
+    input_mask = [1] * len(input_ids)
+
+    # Zero Mask till seq_length
+    zero_mask = [0] * (max_seq_len - len(tokens))
+    input_ids.extend(zero_mask)
+    input_mask.extend(zero_mask)
+    segment_ids.extend(zero_mask)
+
+    return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
+def convert_tokens_to_features(sentence, tokenizer, max_seq_len):
+    tokens = ['[CLS]']
+    tokens.extend(sentence)
     if len(tokens) > max_seq_len - 1:
         tokens = tokens[:max_seq_len - 1]
     tokens.append('[SEP]')
@@ -448,36 +468,47 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                             byte_start_index = elem["start_token"]
                             byte_end_index = elem["end_token"]
                             indice.append((byte_start_index,byte_end_index))
-                        # if byte_end_index == -1 and byte_start_index == -1 and annotations["yes_no_answer"] == "NONE":
-                        #     number_ignored += 1
-                        #     no_answer += 1
-                        #     continue
+
                         long_answer = text[indice[0][0]:indice[0][1]-1]
-                        tokenized_answer = tokenizer.tokenize(long_answer)
-                        clean_text = ' '.join(clean_text.split())
+                        ## SOn tokens lo que representan los indices
+                        long_answer = text.split()[byte_start_index: byte_end_index]
+                        # long_answer = convert2string(long_answer)
+                        # tokenized_answer = tokenizer.tokenize(long_answer)
+                        clean_text = convert2string(clean_text.split())
                         # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
                         final_index = find_substring(clean_text, "see also")[-1][0]
 
                         clean_text = clean_text[:final_index]
 
-
-
                         tokenized_text = tokenizer.tokenize(clean_text)
+                        initial_index, final_index = find_answer_index(clean_text, long_answer, mode=2)
 
-                        initial_index,final_index= find_answer_index(clean_text, tokenized_answer,mode=2)
                         tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
+
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+                        final_text = []
+                        final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
+                        i = 0
+                        indice_atras = 0
+                        indice_adelante = 0
+                        correcto = False
+                        while len(final_text) < max_seq_length or not correcto:
 
-                        if answer_indexes[-1][-1] > 350 and annotations["yes_no_answer"] == "NONE":
-                            # I skip the text that do not have the answer on the first 350 token
-                            number_ignored += 1
-                            continue
+                            if i == 0:
+                                final_text.append(tokenized_text[answer_indexes[0][1] + indice_adelante])
+                                indice_adelante += 1
+                                i = 1
+                            if i == 1:
+                                final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
+                                indice_atras += 1
+                                i = 0
+
                         ids.append(temas["example_id"])
                         # html_text.append(text)
 
-                        C_id, C_mask, C_segment = convert_sentence_to_features(clean_text, tokenizer, max_seq_length)
+                        C_id, C_mask, C_segment = convert_tokens_to_features(final_text, tokenizer, max_seq_length)
 
                         Q_id, Q_mask, Q_segment = convert_sentence_to_features(question,
                                                                                tokenizer, max_seq_length)
@@ -634,6 +665,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         print(temas)
                         if i < 500:
                             archivo_pequeno.append(temas)
+                            i+=1
                         question = temas["question_text"]
                         text = temas["document_text"].lower()
                         clean_text = cleanhtml(text)
@@ -666,10 +698,39 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
 
-                        if answer_indexes[-1] > max_seq_length and annotations["yes_no_answer"] == "NONE":
-                            # I skip the text that do not have the answer on the first 350 token
-                            number_ignored += 1
-                            continue
+                        ## SOn tokens lo que representan los indices
+                        long_answer = text.split()[byte_start_index: byte_end_index]
+                        # long_answer = convert2string(long_answer)
+                        # tokenized_answer = tokenizer.tokenize(long_answer)
+                        clean_text = convert2string(clean_text.split())
+                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+                        final_index = find_substring(clean_text, "see also")[-1][0]
+
+                        clean_text = clean_text[:final_index]
+
+                        tokenized_text = tokenizer.tokenize(clean_text)
+                        initial_index, final_index = find_answer_index(clean_text, long_answer, mode=2)
+
+                        tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
+
+                        #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                                          tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+                        final_text = []
+                        final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
+                        i = 0
+                        indice_atras = 0
+                        indice_adelante = 0
+                        while len(final_text) < max_seq_length:
+                            if i == 0:
+                                final_text.append(tokenized_text[answer_indexes[0][1] + indice_adelante])
+                                indice_adelante += 1
+                                i = 1
+                            if i == 1:
+                                final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
+                                indice_atras += 1
+                                i = 0
+
 
                         ids.append(temas["example_id"])
                         # html_text.append(text)
@@ -678,7 +739,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
 
 
 
-                        C_id, C_mask, C_segment = convert_sentence_to_features(clean_text, tokenizer, max_seq_length)
+                        C_id, C_mask, C_segment = convert_tokens_to_features(final_text, tokenizer, max_seq_length)
 
 
                         Q_id, Q_mask, Q_segment = convert_sentence_to_features(question,
@@ -708,6 +769,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     # original_texts_writer = open(PATH_TO_NATURAL_QUESTIONS + "train/" + "original_text", "w+b")
                     with  open("muestra_entrenamiento", "w+b")as f:
                         pickle.dump(archivo_pequeno, f)
+
                     pickle.dump(X, x_writer)
                     pickle.dump(y, y_writer)
                     pickle.dump(ids, ids_writer)
@@ -736,7 +798,6 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
 def cleanhtml(raw_html):
   cleanr = re.compile('<.*?>')
   cleantext = re.sub(cleanr, '', raw_html)
-
   return cleantext
 def find_substring(string,substring):
     indexes = []
@@ -744,10 +805,12 @@ def find_substring(string,substring):
              indexes.append((m.start(), m.end()))
     return indexes
 def unify_token(tokens):
-    newlist=[]
+    newlist = []
+    i = 0
     for elem in tokens:
-        if "##" in elem:
+        if "##" in elem and tokens.index(elem)!=0:
             newlist[-1] = newlist[-1].strip() + elem.replace("##","")
+
         else:
             newlist.append(elem)
     # Elimino la puntuación del final de la lista como del pricipio de la lista para poder buscar mejor la respuesta en el
@@ -851,7 +914,74 @@ def find_answer_index(html_text, answer_tokens, mode=1):
         start_index = html_text.index(best_match)
         return start_index, start_index + len(best_match)-1
     else:
-        raise Exception("Este modeo no es adimitido")
+        raise Exception("Este modo no es adimitido")
+
+def prueba():
+    url_uncased = "https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/1"
+    bert_layer = hub.KerasLayer(url_uncased, trainable=False)
+    #
+    # vocab_file = bert_layer.resolved_object.sp_model_file.asset_path.numpy()
+    # tokenizer = FullSentencePieceTokenizer(vocab_file)
+    # print(tokenizer.convert_tokens_to_ids([102,1205,367]))
+    #
+    vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
+    do_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
+    tokenizer = FullTokenizer(vocab_file)
+    del bert_layer
+
+    max_seq_length=350
+    f = open("prueba.json","r",encoding="utf8")
+    temas = json.load(f)
+
+
+
+    question = temas["question_text"]
+    text = temas["document_text"].lower()
+    clean_text = cleanhtml(text)
+    annotations = temas["annotations"]
+
+    byte_start_index = annotations[0]["long_answer"]["start_token"]
+    byte_end_index = annotations[0]["long_answer"]["end_token"]
+
+    ## SOn tokens lo que representan los indices
+    long_answer = text.split()[byte_start_index: byte_end_index]
+    # long_answer = convert2string(long_answer)
+    # tokenized_answer = tokenizer.tokenize(long_answer)
+    clean_text = convert2string(clean_text.split())
+    # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+    final_index = find_substring(clean_text, "see also")[-1][0]
+
+    clean_text = clean_text[:final_index]
+
+    tokenized_text = tokenizer.tokenize(clean_text)
+    initial_index, final_index = find_answer_index(clean_text, long_answer, mode=2)
+
+    tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
+
+    #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+    answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
+                      tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+    final_text = []
+    final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
+    i = 0
+    indice_atras = 0
+    indice_adelante = 0
+    correcto = False
+    while len(final_text) < max_seq_length or not correcto:
+
+        if i == 0:
+            final_text.append(tokenized_text[answer_indexes[0][1]+indice_adelante])
+            indice_adelante += 1
+            i = 1
+        if i == 1:
+            final_text.insert(0,tokenized_text[answer_indexes[0][0] - indice_atras])
+            indice_atras += 1
+            i = 0
+
+
+    if answer_indexes[0][-1] > 350 and annotations[0]["yes_no_answer"] == "NONE":
+        # I skip the text that do not have the answer on the first 350 token
+        print("Malo")
 
 def _bytes_feature(value):
   """Returns a bytes_list from a string / byte."""
