@@ -678,25 +678,6 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                             number_ignored += 1
                             no_answer += 1
                             continue
-                        ## SOn tokens lo que representan los indices
-                        long_answer = text.split()[byte_start_index: byte_end_index]
-                        long_answer = convert2string(long_answer)
-                        tokenized_answer = tokenizer.tokenize(long_answer)
-                        clean_text = ' '.join(clean_text.split())
-                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
-                        final_index = find_substring(clean_text, "see also")[-1][0]
-
-                        clean_text = clean_text[:final_index]
-
-                        tokenized_text = tokenizer.tokenize(clean_text)
-                        initial_index, final_index = find_answer_index(clean_text, tokenized_answer, mode=2)
-
-                        tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
-
-
-                        #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
-                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
-                                          tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
 
                         ## SOn tokens lo que representan los indices
                         long_answer = text.split()[byte_start_index: byte_end_index]
