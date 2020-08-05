@@ -737,8 +737,8 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                             temp_y_end[-1] = 1
 
                         if annotations[0]["yes_no_answer"] == "NONE":
-                            temp_y_start[answer_indexes[0]] = 1
-                            temp_y_end[answer_indexes[-1]] = 1
+                            temp_y_start[answer_indexes[0][0]] = 1
+                            temp_y_end[answer_indexes[0][1]] = 1
 
                         X.append([C_id, C_mask, C_segment, Q_id, Q_mask,  Q_segment])
                         y.append([temp_y_start, temp_y_end])
