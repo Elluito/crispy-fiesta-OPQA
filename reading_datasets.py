@@ -660,9 +660,11 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     no_answer =0
                     i = 0
                     archivo_pequeno = []
+                    counter=0
                     for line in f:
+                        counter+=1
                         temas = json.loads(line)
-                        print(temas)
+
                         if i < 500:
                             archivo_pequeno.append(temas)
                             i+=1
@@ -695,8 +697,11 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
 
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
+                        print(answer_indexes)
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+                        print("length tokenized answer")
+                        print(len(tokenized_text))
                         final_text = []
                         final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
                         i = 0
