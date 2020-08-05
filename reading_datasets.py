@@ -727,6 +727,8 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                                                                                            tokenizer, max_seq_length)
                         temp_y_start = np.zeros(max_seq_length+2)
                         temp_y_end = np.zeros(max_seq_length+2)
+                        answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(final_text)) if
+                                          final_text[i:i + len(tokenized_answer)] == tokenized_answer]
 
                         if annotations[0]["yes_no_answer"] == "YES":
                             temp_y_start[-2] = 1
