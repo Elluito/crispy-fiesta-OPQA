@@ -674,7 +674,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         byte_start_index = annotations[0]["long_answer"]["start_token"]
                         byte_end_index = annotations[0]["long_answer"]["end_token"]
 
-                        if byte_end_index ==-1 and byte_start_index==-1 and annotations["yes_no_answer"] =="NONE":
+                        if byte_end_index ==-1 and byte_start_index==-1 and annotations[0]["yes_no_answer"] =="NONE":
                             number_ignored += 1
                             no_answer += 1
                             continue
