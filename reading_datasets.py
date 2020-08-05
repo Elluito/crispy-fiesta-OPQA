@@ -728,15 +728,15 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         temp_y_start = np.zeros(max_seq_length+2)
                         temp_y_end = np.zeros(max_seq_length+2)
 
-                        if annotations["yes_no_answer"] == "YES":
+                        if annotations[0]["yes_no_answer"] == "YES":
                             temp_y_start[-2] = 1
                             temp_y_end[-2] = 1
 
-                        elif annotations["yes_no_answer"] == "NO":
+                        elif annotations[0]["yes_no_answer"] == "NO":
                             temp_y_start[-1] = 1
                             temp_y_end[-1] = 1
 
-                        if annotations["yes_no_answer"] == "NONE":
+                        if annotations[0]["yes_no_answer"] == "NONE":
                             temp_y_start[answer_indexes[0]] = 1
                             temp_y_end[answer_indexes[-1]] = 1
 
