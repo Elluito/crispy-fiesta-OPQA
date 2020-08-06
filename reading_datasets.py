@@ -697,9 +697,10 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
 
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
-                        print(answer_indexes)
+
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
+                        print(answer_indexes)
                         print("length tokenized answer")
                         print(len(tokenized_text))
                         final_text = []
