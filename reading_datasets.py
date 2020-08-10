@@ -698,6 +698,12 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         initial_index, final_index = find_answer_index(clean_text, long_answer, mode=2)
 
                         tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index+1])
+                        if len(tokenized_answer) > max_seq_length:
+                            number_ignored += 1
+                            no_answer += 1
+                            continue
+
+
 
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
 
@@ -717,12 +723,14 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                             indice_adelante = 0
                             while len(final_text) < max_seq_length:
                                 if i == 0:
+                                    answer_indexes[0][1] + indice_adelante
                                     final_text.append(tokenized_text[answer_indexes[0][1] + indice_adelante])
                                     indice_adelante += 1
-                                    i = 1
+                                i = 1
                                 if i == 1:
-                                    final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
-                                    indice_atras += 1
+                                    if answer_indexes[0][0] - indice_atras>0:
+                                        final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
+                                        indice_atras += 1
                                     i = 0
 
 
