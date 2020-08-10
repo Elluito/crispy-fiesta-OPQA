@@ -686,9 +686,12 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         # long_answer = convert2string(long_answer)
                         # tokenized_answer = tokenizer.tokenize(long_answer)
                         clean_text = convert2string(clean_text.split())
-                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
-                        final_index = find_substring(clean_text, "see also")[-1][0]
 
+                        # Este comando devuelve todas las parejas de indices que contienen dicho substring por eso necesitamos el primer elemento de la última pareja [-1][0]
+                        if "see also" in clean_text:
+                            final_index = find_substring(clean_text, "see also")[-1][0]
+                        else:
+                            final_index = len(clean_text)
                         clean_text = clean_text[:final_index]
 
                         tokenized_text = tokenizer.tokenize(clean_text)
@@ -705,6 +708,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         print(tokenized_answer)
                         print("Tokenized text")
                         print(tokenized_text)
+                        print()
                         if annotations[0]["yes_no_answer"] =="NONE":
                             final_text = []
                             final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
