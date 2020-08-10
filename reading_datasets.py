@@ -701,22 +701,23 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
                         print(answer_indexes)
-                        print("length tokenized answer")
+                        print("length tokenized text")
                         print(len(tokenized_text))
-                        final_text = []
-                        final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
-                        i = 0
-                        indice_atras = 0
-                        indice_adelante = 0
-                        while len(final_text) < max_seq_length:
-                            if i == 0:
-                                final_text.append(tokenized_text[answer_indexes[0][1] + indice_adelante])
-                                indice_adelante += 1
-                                i = 1
-                            if i == 1:
-                                final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
-                                indice_atras += 1
-                                i = 0
+                        if annotations[0]["yes_no_answer"] =="NONE":
+                            final_text = []
+                            final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
+                            i = 0
+                            indice_atras = 0
+                            indice_adelante = 0
+                            while len(final_text) < max_seq_length:
+                                if i == 0:
+                                    final_text.append(tokenized_text[answer_indexes[0][1] + indice_adelante])
+                                    indice_adelante += 1
+                                    i = 1
+                                if i == 1:
+                                    final_text.insert(0, tokenized_text[answer_indexes[0][0] - indice_atras])
+                                    indice_atras += 1
+                                    i = 0
 
 
                         ids.append(temas["example_id"])
