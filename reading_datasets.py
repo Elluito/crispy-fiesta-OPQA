@@ -694,7 +694,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         tokenized_text = tokenizer.tokenize(clean_text)
                         initial_index, final_index = find_answer_index(clean_text, long_answer, mode=2)
 
-                        tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index])
+                        tokenized_answer = tokenizer.tokenize(clean_text[initial_index:final_index+1])
 
                         #  ESTO ES PARA ENCONTRAR LOS  INDICE CONSECUTIVOS DE LA RESPUESTA EN EL TEXTO LIMPIO TOKENIZADO
 
