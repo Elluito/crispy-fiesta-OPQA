@@ -701,9 +701,10 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         answer_indexes = [(i, i + len(tokenized_answer)) for i in range(len(tokenized_text)) if
                                           tokenized_text[i:i + len(tokenized_answer)] == tokenized_answer]
                         print(annotations[0])
-                        print(answer_indexes)
-                        print("length tokenized text")
-                        print(len(tokenized_text))
+                        print("Tokenized Answer")
+                        print(tokenized_answer)
+                        print("Tokenized text")
+                        print(tokenized_text)
                         if annotations[0]["yes_no_answer"] =="NONE":
                             final_text = []
                             final_text.extend(tokenized_text[answer_indexes[0][0]:answer_indexes[0][1]])
