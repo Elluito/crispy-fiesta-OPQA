@@ -23,7 +23,7 @@ feature_description = {
     'question_segment_id': tf.io.FixedLenFeature([], tf.int64, default_value=0),
 }
 
-def convert_sentence_to_features(sentence, tokenizer, max_seq_len):
+def convert_sentence_to_features(sentence, tokenizer, max_seq_len, framework):
     tokens = ['[CLS]']
     tokens.extend(tokenizer.tokenize(sentence))
     if len(tokens) > max_seq_len - 1:
@@ -39,8 +39,39 @@ def convert_sentence_to_features(sentence, tokenizer, max_seq_len):
     input_ids.extend(zero_mask)
     input_mask.extend(zero_mask)
     segment_ids.extend(zero_mask)
+    if framework == "tensorflow":
+        return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
+    elif framework=="torch":
+        return input_ids,input_mask
+    else:
+        raise  Exception(f"Este framework no está soportado : {framework}")
 
-    return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
+def convert_sentences_to_features(sentence1,sentence2, tokenizer, max_seq_len):
+        tokens = ['[CLS]']
+        tokens.extend(tokenizer.tokenize(sentence1))
+        segment_ids = [0] * len(tokens)
+        tokens.append('[SEP]')
+        second_centence = tokenizer.tokenize(sentence2)
+        segment_ids.extend([1]*(len(second_centence)+1))
+        tokens.extend(second_centence)
+        
+        if len(tokens) > max_seq_len - 1:
+            tokens = tokens[:max_seq_len -1]
+
+
+
+        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+        input_mask = [1] * len(input_ids)
+
+        # Zero Mask till seq_length
+        zero_mask = [0] * (max_seq_len - len(tokens))
+        one_mask = [1] * (max_seq_len - len(tokens))
+        input_ids.extend(zero_mask)
+        input_mask.extend(zero_mask)
+        segment_ids.extend(one_mask)
+        if len(segment_ids)>max_seq_len - 1:
+            segment_ids =segment_ids[:max_seq_len]
+        return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
 def convert_tokens_to_features(sentence, tokenizer, max_seq_len):
     tokens = ['[CLS]']
     tokens.extend(sentence)
@@ -61,7 +92,8 @@ def convert_tokens_to_features(sentence, tokenizer, max_seq_len):
     return np.array(input_ids).reshape(1,max_seq_len),np.array(input_mask).reshape(1,max_seq_len), np.array(segment_ids).reshape(1,max_seq_len)
 
 
-def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=True,tokenizer=None,max_seq_length=512):
+def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=True,tokenizer=None,max_seq_length=512,
+                 framework="tensorflow"):
 
 
 
@@ -83,7 +115,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                                 text = cosa["context"]
                                 C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
                                 text_tokens = tokenizer.tokenize(text)
-                                if len(text_tokens)>max_seq_length:
+                                if len(text_tokens)>max_seq_length :
                                     continue
                                 for question in cosa["qas"]:
                                     unique_id = question["id"]
@@ -95,20 +127,34 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                                                 indices = []
                                                 for token in text_answer_list:
                                                     indices.append(list(text_tokens).index(token))
+
                                                 first_index = indices[0]
                                                 last_index = indices[-1]
                                                 break
                                         except:
                                             continue
 
-                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
-                                    temp_y_start=np.zeros(max_seq_length)
-                                    temp_y_start[first_index]=1
-                                    temp_y_end= np.zeros(max_seq_length)
-                                    temp_y_end[last_index]=1
-                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
-                                    X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                    y.append([temp_y_start,temp_y_end])
+                                    if framework=="torch":
+                                        if len(text_tokens) +len(tokenizer.tokenizequestion["question"]) > max_seq_length:
+                                            continue
+                                        ids,mask,segment = convert_sentences_to_features(text,question["question"],
+                                                                                        tokenizer,max_seq_length)
+                                        temp_y_start = np.zeros(max_seq_length)
+                                        temp_y_start[first_index] = 1
+                                        temp_y_end = np.zeros(max_seq_length)
+                                        temp_y_end[last_index] = 1
+                                        # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                        X.append([ids,mask, segment])
+                                        y.append([temp_y_start, temp_y_end])
+                                    elif framework=="tensorflow" :
+                                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
+                                        temp_y_start=np.zeros(max_seq_length)
+                                        temp_y_start[first_index]=1
+                                        temp_y_end= np.zeros(max_seq_length)
+                                        temp_y_end[last_index]=1
+                                        # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                        X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
+                                        y.append([temp_y_start,temp_y_end])
 
                                     if np.array(X).itemsize*np.array(X).size>1000000:
                                         with open(PATH_TO_SQUAD+"test/"+"X_{}".format(i),"w+b")as f:
@@ -150,7 +196,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         for temp in temas:
                             for cosa in temp["paragraphs"]:
                                 text = cosa["context"]
-                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+
                                 text_tokens = tokenizer.tokenize(text)
                                 if len(text_tokens) > max_seq_length:
                                     continue
@@ -169,31 +215,33 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                                                 break
                                         except:
                                             continue
+                                    if framework=="torch":
+                                        if len(text_tokens) +len(tokenizer.tokenize(question["question"])) >max_seq_length:
+                                            continue
+                                        input_ids,mask,segment = convert_sentences_to_features(text,
+                                                                                               question["question"],
+                                                                                        tokenizer,max_seq_length)
+                                        temp_y_start = np.zeros(max_seq_length)
+                                        temp_y_start[first_index] = 1
+                                        temp_y_end = np.zeros(max_seq_length)
+                                        temp_y_end[last_index] = 1
+                                        # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                        X.append([input_ids,segment])
+                                        y.append([temp_y_start, temp_y_end])
+                                    elif framework=="tensorflow" :
+                                        C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer,
+                                                                                               max_seq_length,
+                                                                                               framework)
+                                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
+                                        temp_y_start=np.zeros(max_seq_length)
+                                        temp_y_start[first_index]=1
+                                        temp_y_end= np.zeros(max_seq_length)
+                                        temp_y_end[last_index]=1
+                                        X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
+                                        y.append([temp_y_start,temp_y_end])
 
-                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,
-                                                                                           max_seq_length)
-                                    temp_y_start = np.zeros(max_seq_length)
-                                    temp_y_start[first_index] = 1
-                                    temp_y_end = np.zeros(max_seq_length)
-                                    temp_y_end[last_index] = 1
 
-                                    X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
-                                    y.append([temp_y_start, temp_y_end])
 
-                                    # if np.array(X).itemsize * np.array(X).size > 1000000:
-                                    #     with open(PATH_TO_SQUAD + "test/" + "X_{}".format(i), "w+b")as f:
-                                    #         pickle.dump(X, f)
-                                    #     with open(PATH_TO_SQUAD + "test/" + "Y_{}".format(i), "w+b")as f:
-                                    #         pickle.dump(y, f)
-                                    #     with open(PATH_TO_SQUAD + "test/" + "ids_{}".format(i), "w+b")as f:
-                                    #         pickle.dump(ids, f)
-                                    #     i += 1
-                                    #     X = []
-                                    #     y = []
-                                    #     ids = []
-                    # X=np.array(X)
-                    # y=np.array(y)
-                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
                         with open(PATH_TO_SQUAD + "test/" + "X", "w+b")as f:
                             pickle.dump(X, f)
                         with open(PATH_TO_SQUAD + "test/" + "Y", "w+b")as f:
@@ -293,7 +341,7 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                         for temp in temas:
                             for cosa in temp["paragraphs"]:
                                 text = cosa["context"]
-                                C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer, max_seq_length)
+
                                 text_tokens = tokenizer.tokenize(text)
                                 if len(text_tokens)>max_seq_length:
                                     continue
@@ -313,17 +361,36 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                                         except:
                                             continue
 
-                                    Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"], tokenizer,max_seq_length)
-                                    temp_y_start=np.zeros(max_seq_length)
-                                    temp_y_start[first_index]=1
-                                    temp_y_end= np.zeros(max_seq_length)
-                                    temp_y_end[last_index]=1
-                                    # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
-                                    X.append([C_id,C_mask,C_segment,Q_id,Q_mask,Q_mask])
-                                    y.append([temp_y_start,temp_y_end])
-                    # X=np.array(X)
-                    # y=np.array(y)
-                    # dictionary = {"questions_id": X[:,3], "question_input_mask": X[:,4], "question_segment_id": X[:,5],"context_id": X[:,0], "context_input_mask": X[:,1], "context_segment_id": X[:,2]}
+                                    if framework == "torch":
+                                        if len(text_tokens) + len(
+                                                tokenizer.tokenize(question["question"])) > max_seq_length:
+                                            continue
+                                        ids_i, mask, segment = convert_sentences_to_features(text, question["question"],
+                                                                                           tokenizer, max_seq_length)
+                                        temp_y_start = np.zeros(max_seq_length)
+                                        temp_y_start[first_index] = 1
+                                        temp_y_end = np.zeros(max_seq_length)
+                                        temp_y_end[last_index] = 1
+                                        # dictionary={"questions_id":Q_id,"question_input_mask":Q_mask,"question_segment_id":Q_segment,"context_id":C_id,"context_input_mask":C_mask,"context_segment_id":C_segment}
+                                        X.append((ids_i, mask))
+                                        y.append([temp_y_start, temp_y_end])
+                                    elif framework == "tensorflow":
+                                        C_id, C_mask, C_segment = convert_sentence_to_features(text, tokenizer,
+                                                                                               max_seq_length,
+                                                                                               framework=framework)
+                                        Q_id, Q_mask, Q_segment = convert_sentence_to_features(question["question"],
+                                                                                               tokenizer,
+                                                                                               max_seq_length)
+                                        temp_y_start = np.zeros(max_seq_length)
+                                        temp_y_start[first_index] = 1
+                                        temp_y_end = np.zeros(max_seq_length)
+                                        temp_y_end[last_index] = 1
+                                        X.append([C_id, C_mask, C_segment, Q_id, Q_mask, Q_mask])
+                                        y.append([temp_y_start, temp_y_end])
+
+
+
+
                     x_writer=open(PATH_TO_SQUAD+"train/"+"X","w+b")
                     y_writer=open(PATH_TO_SQUAD+"train/"+"Y","w+b")
                     ids_writer = open(PATH_TO_SQUAD+"train/" + "ids", "w+b")
@@ -337,16 +404,6 @@ def read_dataset(dataset="squad",mode="test",version="simplified",fragmented=Tru
                     return PATH_TO_SQUAD+"train/"
                 else:
 
-                    # x_reader = open(PATH_TO_SQUAD +"train/"+ "X", "r+b")
-                    # y_reader = open(PATH_TO_SQUAD +"train/"+ "Y", "r+b")
-                    # ids_reader = open(PATH_TO_SQUAD +"train/"+ "ids", "r+b")
-                    #
-                    # X=pickle.load(x_reader)
-                    # y=pickle.load(y_reader)
-                    # ids=pickle.load(ids_reader)
-                    # x_reader.close()
-                    # y_reader.close()
-                    # ids_reader.close()
                     return PATH_TO_SQUAD+"train/"
 
 
