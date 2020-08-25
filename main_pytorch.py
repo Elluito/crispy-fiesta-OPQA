@@ -6,7 +6,7 @@ import torch
 from ignite.engine import Events, Engine
 from ignite.metrics import Accuracy, Metric
 from torch.utils.data import Dataset
-from transformers import AutoTokenizer, BertModel
+from transformers import BertTokenizer, BertModel
 
 from main import crear_batch
 from reading_datasets import read_dataset, unify_token, convert2string
@@ -77,7 +77,7 @@ def adjust_x(x):
     return tokens_tensor,segments_tensors
 def reshape_x(x,mode=1):
     ids, mask = x
-    if mode==1:
+    if mode == 1:
         return ids.view(-1),mask.view(-1)
     else:
         return np.array(ids).reshape(-1), np.array(mask).reshape(-1)
@@ -221,7 +221,7 @@ def local_predict(model,ids,mask,number_partitions=10):
 
 if __name__ == '__main__':
     #
-    tokenizer = AutoTokenizer.from_pretrained(URL_TO_TINY)
+    tokenizer = BertTokenizer.from_pretrained(URL_TO_TINY)
     device = torch.cuda.current_device()
 
 
