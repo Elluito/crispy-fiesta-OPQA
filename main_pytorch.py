@@ -269,7 +269,7 @@ if __name__ == '__main__':
         y1,y2 = model(torch.cuda.LongTensor(ids),torch.cuda.LongTensor(segment))
         loss1 = criterion(y1, y_start)
         loss2 = criterion(y2,y_end)
-        loss1.backward()
+        loss1.backward(retain_graph=True)
         loss2.backward()
         optimizer.step()
         s = trainer.state
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     #           .format(trainer.state.epoch, metrics["val_acc"]))
 
 
-    trainer.run(train_dataset,max_epochs=50)
+    trainer.run(train_dataset,max_epochs=3)
 
     # evaluator.run(test_dataset)
     model.eval()
