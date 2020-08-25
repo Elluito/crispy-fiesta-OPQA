@@ -29,17 +29,6 @@ def negLogSum(y_pred,y_true):
     return suma
 
 def build_model(max_seq_length):
-    # path =PATH_TO_TINY+"/bert_config.json"
-    # weights = torch.load(PATH_TO_MODEL)
-    #
-    # config = BertConfig(*leer_config(path))
-    # model = BertModel(config)
-    # model.load_state_dict(weights)
-
-    #
-
-    # model = AutoModel.from_pretrained(URL_TO_TINY)
-    # model.eval()
     model = BertModel.from_pretrained(URL_TO_TINY)
     model.train()
 
@@ -69,9 +58,6 @@ def build_model(max_seq_length):
             a Tensor of output data. We can use Modules defined in the constructor as
             well as arbitrary operators on Tensors.
             """
-            # ids,mask = list(zip(*x))
-            # ids = torch.tensor(list(ids))
-            # mask = torch.tensor(list(mask))
             h_relu = self.BERT(ids, token_type_ids=masks)[0]
             y_start = self.linear1(h_relu)
             y_end = self.linear2(h_relu)
@@ -86,10 +72,6 @@ def build_model(max_seq_length):
     return CustomModel(1)
 def adjust_x(x):
     ids, mask = x
-    # new_ids = np.array(ids).reshape((1,-1))
-    #
-    # new_mask = np.array(mask).reshape((1,-1))
-
     tokens_tensor = torch.LongTensor(ids)
     segments_tensors = torch.LongTensor(mask)
     return tokens_tensor,segments_tensors
@@ -177,12 +159,16 @@ class CategoricalAcurracy(Metric):
 
         res = 0
         return res
-def  pytroch_metric(ids,segments,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_name):
+def  pytroch_metric(ids,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_name):
 
     start_acuraccy=[]
     end_acuraccy = []
     f = open(log_name, "w",encoding="utf8")
+    accuracy_start = keras.metrics.CategoricalAccuracy()
+    accuracy_end = keras.metrics.CategoricalAccuracy()
     for i,tokens in enumerate(ids):
+        accuracy_start(start_pred,y_start)
+        accuracy_end(end_pred,y_end)
         start_pred = np.argmax(y_pred_s[i])
         end_pred = np.argmax(y_pred_e[i])
         real_start = np.argmax(y_start[i])
@@ -193,8 +179,9 @@ def  pytroch_metric(ids,segments,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_n
             start_acuraccy.append(0)
         if end_pred == real_end:
             end_acuraccy.append(1)
-        elif start_pred != real_start:
+        elif end_pred != real_end:
             end_acuraccy.append(0)
+
         real_tokens = tokenizer.convert_ids_to_tokens(tokens)
         real_tokens = unify_token(real_tokens)
         question_index = real_tokens.index("[SEP]")
@@ -208,8 +195,10 @@ def  pytroch_metric(ids,segments,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_n
             if tok != "[PAD]" and tok != "[SEP]" and tok != "[CLS]":
                 s += tok + " "
         f.write("Question:{} True answer: {}   \n  Predicted_answer: {}      \n".format(s,true_answer,predicted_answer ))
-    f.write(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - Start end acuraccy: {np.mean(end_acuraccy)}")
-    print(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - Start end acuraccy: {np.mean(end_acuraccy)}")
+    f.write(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - End acuraccy: {np.mean(end_acuraccy)}")
+    f.write(f"\n Start index Categorical acuraccy: {accuracy_start .result()} - End  Categorical acuraccy:"
+            f" {accuracy_end.result()}")
+    print(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - End acuraccy:{np.mean(end_acuraccy)}")
     f.close()
 
 
@@ -238,14 +227,14 @@ if __name__ == '__main__':
 
     max_seq_length = 350
     model = build_model(max_seq_length)
-    optimizer = torch.optim.Adam(model.parameters(), lr = 0.00005, betas=(0.9, 0.98),
+    optimizer = torch.optim.Adam(model.parameters(), lr = 0.0005, betas=(0.9, 0.98),
                                              eps=1e-9)
     model.cuda()
 
     criterion = negLogSum
 
     # Train data
-    path = read_dataset(mode="test", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
+    path = read_dataset(mode="train", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
                         fragmented=False, framework="torch")
     x,y = crear_batch(path,fragmented=False)
 
@@ -255,9 +244,9 @@ if __name__ == '__main__':
 
 
     train_dataset = SquadDataset(ids, mask, y[:, 0],y[:,1] )
-    train_dataset.batch(10)
+    train_dataset.batch(32)
     # Test data
-    path = read_dataset(mode="train", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
+    path = read_dataset(mode="test", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
                         fragmented=False, framework="torch")
     x_test, y_test = crear_batch(path, fragmented=False)
     thing = list(map(list, zip(*x_test)))
@@ -278,15 +267,17 @@ if __name__ == '__main__':
                                       batch["end"]
 
         y1,y2 = model(torch.cuda.LongTensor(ids),torch.cuda.LongTensor(segment))
-        loss = criterion(y1, y_start)+criterion(y2,y_end)
-        loss.backward()
+        loss1 = criterion(y1, y_start)
+        loss2 = criterion(y2,y_end)
+        loss1.backward()
+        loss2.backward()
         optimizer.step()
         s = trainer.state
-        item = loss.item()
+        item = loss1.item() +loss2.item()
         epoch_accuracy_start(y1.cpu().detach().numpy(),y_start)
         epoch_accuracy_end(y2.cpu().detach().numpy(),y_end)
         print(
-            "{}/{} : {} - {:.3f}".format(s.epoch, s.max_epochs, s.iteration, item)
+            "{}/{} : {} - Start {:.3f} - End {:.3f}".format(s.epoch, s.max_epochs, s.iteration, loss1.item(),loss2.item())
         )
         return item
 
@@ -321,6 +312,8 @@ if __name__ == '__main__':
 
         print("Training Results - Epoch: {}  Avg start accuracy: {:.2f}   Avg end accuracy: {:.2f}".format(
             trainer.state.epoch,epoch_accuracy_start.result(),epoch_accuracy_end.result()))
+        epoch_accuracy_start.reset_states()
+        epoch_accuracy_end.reset_states()
 
 
     # @trainer.on(Events.EPOCH_COMPLETED)
@@ -331,7 +324,8 @@ if __name__ == '__main__':
     #           .format(trainer.state.epoch, metrics["val_acc"]))
 
 
-    trainer.run(train_dataset,epoch_length=10,max_epochs=3)
+    trainer.run(train_dataset,max_epochs=50)
+
     # evaluator.run(test_dataset)
     model.eval()
     thing = list(map(list, zip(*x_test)))
@@ -341,5 +335,10 @@ if __name__ == '__main__':
 
     #
     #
-    pytroch_metric(ids,mask,y_pred_start,y_pred_end,y_test[:,0],y_test[:,1],tokenizer=tokenizer,
-                   log_name="prueba_predic_and_metric.txt")
+    import datetime
+    t = str(datetime.datetime.now().time())
+    t.replace(":","_")
+    pytroch_metric(ids,y_pred_start,y_pred_end,y_test[:,0],y_test[:,1],tokenizer=tokenizer,
+                   log_name="AAprueba_{}.txt".format(t))
+    torch.save(model, "model_{}.h5".format(URL_TO_TINY))
+
