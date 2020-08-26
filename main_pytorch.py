@@ -1,5 +1,6 @@
 import json
 import os
+os.environ['TFHUB_CACHE_DIR'] = 'local_model'
 import pickle
 
 import numpy as np
@@ -13,7 +14,7 @@ from transformers import BertTokenizer, BertModel
 from main import crear_batch
 from reading_datasets import read_dataset, unify_token, convert2string
 
-os.environ['TFHUB_CACHE_DIR'] = 'local_model'
+
 
 PATH_TO_MODEL = "local_model/bert_tiny.bin"
 PATH_TO_TINY = "local_model/uncased_L-2_H-128_A-2"
