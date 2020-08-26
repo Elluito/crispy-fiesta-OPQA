@@ -16,8 +16,6 @@ print("pase ignite 2")
 from torch.utils.data import Dataset
 print("pase itorch dataset")
 from transformers import BertTokenizer, BertModel
-print("pase transformers")
-from main import crear_batch
 print("pase Main")
 from reading_datasets import read_dataset, unify_token, convert2string
 print("pase Reading datasets")
@@ -28,6 +26,25 @@ PATH_TO_MODEL = "local_model/bert_tiny.bin"
 PATH_TO_TINY = "local_model/uncased_L-2_H-128_A-2"
 URL_TO_TINY = "google/bert_uncased_L-2_H-128_A-2"
 
+#######################funciones#########################################
+def crear_batch(path_to_features,fragmented=False,batchsize=32):
+    if fragmented:
+        elems=len(glob.glob(path_to_features+"X_*"))
+        indice=int(np.random.randint(0,elems,1))
+        with open(path_to_features+"X_{}".format(indice),"r+b") as f:
+            X  = np.array(pickle.load(f))
+        with open(path_to_features+"Y_{}".format(indice),"r+b") as f:
+            Y = np.array(pickle.load(f))
+        indices=np.random.randint(0,len(X),batchsize)
+        return X[indices,:],Y[indices,:]
+    else:
+
+        with open(path_to_features + "X", "r+b") as f:
+            X = np.array(pickle.load(f))
+        with open(path_to_features + "Y", "r+b") as f:
+            Y = np.array(pickle.load(f))
+
+        return X, Y
 
 def leer_config(path_to_config):
     archivo = open(path_to_config, "r")
@@ -243,6 +260,12 @@ def local_predict(model, ids, mask, number_partitions=10):
         actual_i = end_index
     assert len(y_start) == len(ids), "Se predijeron un numero diferente de elementos en la entrada"
     return y_start, y_end
+
+
+
+
+#######################eJECUCIÓN#########################################
+
 
 
 if __name__ == '__main__':
