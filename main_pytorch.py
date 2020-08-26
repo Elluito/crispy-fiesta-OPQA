@@ -4,15 +4,23 @@ os.environ['TFHUB_CACHE_DIR'] = 'local_model'
 import pickle
 
 import numpy as np
+print("pase numpy")
 import tensorflow.keras as keras
+print("pase keras")
 import torch
+print("pase torch")
 from ignite.engine import Events, Engine
+print("pase ignite 1")
 from ignite.metrics import Accuracy, Metric
+print("pase ignite 2")
 from torch.utils.data import Dataset
+print("pase itorch dataset")
 from transformers import BertTokenizer, BertModel
-
+print("pase transformers")
 from main import crear_batch
+print("pase Main")
 from reading_datasets import read_dataset, unify_token, convert2string
+print("pase Reading datasets")
 
 
 
