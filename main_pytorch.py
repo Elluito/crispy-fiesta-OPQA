@@ -1,4 +1,6 @@
 import json
+import os
+import pickle
 
 import numpy as np
 import tensorflow.keras as keras
@@ -11,22 +13,28 @@ from transformers import BertTokenizer, BertModel
 from main import crear_batch
 from reading_datasets import read_dataset, unify_token, convert2string
 
+os.environ['TFHUB_CACHE_DIR'] = 'local_model'
+
 PATH_TO_MODEL = "local_model/bert_tiny.bin"
 PATH_TO_TINY = "local_model/uncased_L-2_H-128_A-2"
 URL_TO_TINY = "google/bert_uncased_L-2_H-128_A-2"
+
+
 def leer_config(path_to_config):
-    archivo = open(path_to_config,"r")
+    archivo = open(path_to_config, "r")
     archivo_config = json.load(archivo)
     archivo.close()
     return archivo_config
 
-def negLogSum(y_pred,y_true):
+
+def negLogSum(y_pred, y_true):
     y_true = torch.cuda.FloatTensor(y_true)
     y_pred = - torch.log(y_pred)
-    real = torch.mul(y_pred,y_true)
+    real = torch.mul(y_pred, y_true)
     suma = real.sum()
 
     return suma
+
 
 def build_model(max_seq_length):
     model = BertModel.from_pretrained(URL_TO_TINY)
@@ -44,15 +52,16 @@ def build_model(max_seq_length):
             self.linear2 = torch.nn.Linear(self.BERT.pooler.dense.out_features, D_out)
             self.linear1 = torch.nn.Linear(self.BERT.pooler.dense.out_features, D_out)
             self.final = torch.nn.Softmax()
-        def set_mode(self,mode="train"):
+
+        def set_mode(self, mode="train"):
             if mode == "train":
                 self.BERT.train()
             elif mode == "eval":
                 self.BERT.eval()
             else:
-                raise  Exception(f"No existe dicho modo {mode}")
+                raise Exception(f"No existe dicho modo {mode}")
 
-        def forward(self, ids,masks):
+        def forward(self, ids, masks):
             """
             In the forward function we accept a Tensor of input data and we must return
             a Tensor of output data. We can use Modules defined in the constructor as
@@ -61,30 +70,35 @@ def build_model(max_seq_length):
             h_relu = self.BERT(ids, token_type_ids=masks)[0]
             y_start = self.linear1(h_relu)
             y_end = self.linear2(h_relu)
-            y_start = y_start.view(-1,max_seq_length)
-            y_end = y_end.view(-1,max_seq_length)
+            y_start = y_start.view(-1, max_seq_length)
+            y_end = y_end.view(-1, max_seq_length)
 
             y_start = self.final(y_start)
             y_end = self.final(y_end)
-            return y_start,y_end
-
+            return y_start, y_end
 
     return CustomModel(1)
+
+
 def adjust_x(x):
     ids, mask = x
     tokens_tensor = torch.LongTensor(ids)
     segments_tensors = torch.LongTensor(mask)
-    return tokens_tensor,segments_tensors
-def reshape_x(x,mode=1):
+    return tokens_tensor, segments_tensors
+
+
+def reshape_x(x, mode=1):
     ids, mask = x
     if mode == 1:
-        return ids.view(-1),mask.view(-1)
+        return ids.view(-1), mask.view(-1)
     else:
         return np.array(ids).reshape(-1), np.array(mask).reshape(-1)
+
+
 class SquadDataset(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self, ids,mask,start,end, transform=None):
+    def __init__(self, ids, mask, start, end, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -97,29 +111,30 @@ class SquadDataset(Dataset):
         self.y_start = np.array(start)
         self.y_end = np.array(end)
         self.transform = transform
-        self.batch_size=1
+        self.batch_size = 1
 
     def __len__(self):
         return len(self.IDS)
-    def batch(self,batch_size):
-        self.batch_size=batch_size
+
+    def batch(self, batch_size):
+        self.batch_size = batch_size
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        if self.batch_size==1:
+        if self.batch_size == 1:
             ids = self.IDS[idx]
             segment = self.Mask[idx]
             start = self.y_start[idx]
             end = self.y_end[idx]
-            sample = {'ids': ids, 'segment': segment,"start":start,"end":end}
+            sample = {'ids': ids, 'segment': segment, "start": start, "end": end}
 
             if self.transform:
                 sample = self.transform(sample)
 
             return sample
         else:
-            indices = np.random.randint(0,len(self.IDS),self.batch_size)
+            indices = np.random.randint(0, len(self.IDS), self.batch_size)
             ids = self.IDS[indices]
             segment = self.Mask[indices]
             start = self.y_start[indices]
@@ -130,8 +145,6 @@ class SquadDataset(Dataset):
                 sample = self.transform(sample)
 
             return sample
-
-
 
 
 class CategoricalAcurracy(Metric):
@@ -155,20 +168,21 @@ class CategoricalAcurracy(Metric):
     def compute(self):
         # compute the metric using the internal variables
         # res = self._var1 / self._var2
-        result =torch.mul()
+        result = torch.mul()
 
         res = 0
         return res
-def  pytroch_metric(ids,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_name):
 
-    start_acuraccy=[]
+
+def pytroch_metric(ids, y_pred_s, y_pred_e, y_start, y_end, tokenizer, log_name):
+    start_acuraccy = []
     end_acuraccy = []
-    f = open(log_name, "w",encoding="utf8")
+    f = open(log_name, "w", encoding="utf8")
     accuracy_start = keras.metrics.CategoricalAccuracy()
     accuracy_end = keras.metrics.CategoricalAccuracy()
-    for i,tokens in enumerate(ids):
-        accuracy_start(start_pred,y_start)
-        accuracy_end(end_pred,y_end)
+    for i, tokens in enumerate(ids):
+        accuracy_start(y_pred_s[i], y_start[i])
+        accuracy_end(y_pred_e[i], y_end[i])
         start_pred = np.argmax(y_pred_s[i])
         end_pred = np.argmax(y_pred_e[i])
         real_start = np.argmax(y_start[i])
@@ -189,34 +203,37 @@ def  pytroch_metric(ids,y_pred_s,y_pred_e,y_start,y_end,tokenizer,log_name):
         s = ""
         tokens = tokenizer.convert_ids_to_tokens(tokens)
         tokens.pop(0)
-        true_answer = convert2string(tokens[real_start:real_end+1])
-        predicted_answer = convert2string(tokens[start_pred:end_pred+1])
+        true_answer = convert2string(tokens[real_start:real_end + 1])
+        predicted_answer = convert2string(tokens[start_pred:end_pred + 1])
         for tok in QUESTION_TOKENS:
             if tok != "[PAD]" and tok != "[SEP]" and tok != "[CLS]":
                 s += tok + " "
-        f.write("Question:{} True answer: {}   \n  Predicted_answer: {}      \n".format(s,true_answer,predicted_answer ))
+        f.write(
+            "Question:{} True answer: {}   \n  Predicted_answer: {}      \n".format(s, true_answer, predicted_answer))
     f.write(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - End acuraccy: {np.mean(end_acuraccy)}")
-    f.write(f"\n Start index Categorical acuraccy: {accuracy_start .result()} - End  Categorical acuraccy:"
+    f.write(f"\n Start index Categorical acuraccy: {accuracy_start.result()} - End  Categorical acuraccy:"
             f" {accuracy_end.result()}")
     print(f"\n Start index acuraccy: {np.mean(start_acuraccy)} - End acuraccy:{np.mean(end_acuraccy)}")
+    print(f"\n Start index Categorical acuraccy: {accuracy_start.result()} - End  Categorical acuraccy:"
+            f" {accuracy_end.result()}")
     f.close()
 
 
-def local_predict(model,ids,mask,number_partitions=10):
-    last_index=len(ids)
+def local_predict(model, ids, mask, number_partitions=10):
+    last_index = len(ids)
     y_start = []
     y_end = []
     actual_i = 0
 
     while actual_i < last_index:
-        end_index = actual_i+number_partitions if actual_i+number_partitions <= last_index else last_index
-        mini_ids,mini_mask = ids[actual_i:end_index],mask[actual_i:end_index]
-        y_pred_1,y_pred_2 = model(torch.cuda.LongTensor(mini_ids),torch.cuda.LongTensor(mini_mask))
+        end_index = actual_i + number_partitions if actual_i + number_partitions <= last_index else last_index
+        mini_ids, mini_mask = ids[actual_i:end_index], mask[actual_i:end_index]
+        y_pred_1, y_pred_2 = model(torch.cuda.LongTensor(mini_ids), torch.cuda.LongTensor(mini_mask))
         y_start.extend(y_pred_1.cpu().detach().numpy())
         y_end.extend(y_pred_2.cpu().detach().numpy())
         actual_i = end_index
-    assert len(y_start) == len(ids),"Se predijeron un numero diferente de elementos en la entrada"
-    return y_start,y_end
+    assert len(y_start) == len(ids), "Se predijeron un numero diferente de elementos en la entrada"
+    return y_start, y_end
 
 
 if __name__ == '__main__':
@@ -224,11 +241,10 @@ if __name__ == '__main__':
     tokenizer = BertTokenizer.from_pretrained(URL_TO_TINY)
     device = torch.cuda.current_device()
 
-
     max_seq_length = 350
     model = build_model(max_seq_length)
-    optimizer = torch.optim.Adam(model.parameters(), lr = 0.0005, betas=(0.9, 0.98),
-                                             eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00005, betas=(0.9, 0.98),
+                                 eps=1e-9)
     model.cuda()
 
     criterion = negLogSum
@@ -236,14 +252,12 @@ if __name__ == '__main__':
     # Train data
     path = read_dataset(mode="train", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
                         fragmented=False, framework="torch")
-    x,y = crear_batch(path,fragmented=False)
-
+    x, y = crear_batch(path, fragmented=False)
 
     thing = list(map(list, zip(*x)))
-    ids,mask = np.squeeze(np.array(thing[0])),np.squeeze(np.array(thing[1]))
+    ids, mask = np.squeeze(np.array(thing[0])), np.squeeze(np.array(thing[1]))
 
-
-    train_dataset = SquadDataset(ids, mask, y[:, 0],y[:,1] )
+    train_dataset = SquadDataset(ids, mask, y[:, 0], y[:, 1])
     train_dataset.batch(32)
     # Test data
     path = read_dataset(mode="test", dataset="squad", tokenizer=tokenizer, max_seq_length=max_seq_length,
@@ -251,7 +265,6 @@ if __name__ == '__main__':
     x_test, y_test = crear_batch(path, fragmented=False)
     thing = list(map(list, zip(*x_test)))
     ids, mask = np.squeeze(np.array(thing[0])), np.squeeze(np.array(thing[1]))
-
 
     test_dataset = SquadDataset(ids, mask, y[:, 0], y[:, 1])
     epoch_loss_avg1 = keras.metrics.Mean()
@@ -263,21 +276,22 @@ if __name__ == '__main__':
     def train_step(engine, batch):
         model.train()
         optimizer.zero_grad()
-        ids, segment,y_start,y_end =  batch["ids"], batch["segment"], batch["start"],\
-                                      batch["end"]
+        ids, segment, y_start, y_end = batch["ids"], batch["segment"], batch["start"], \
+                                       batch["end"]
 
-        y1,y2 = model(torch.cuda.LongTensor(ids),torch.cuda.LongTensor(segment))
+        y1, y2 = model(torch.cuda.LongTensor(ids), torch.cuda.LongTensor(segment))
         loss1 = criterion(y1, y_start)
-        loss2 = criterion(y2,y_end)
+        loss2 = criterion(y2, y_end)
         loss1.backward(retain_graph=True)
         loss2.backward()
         optimizer.step()
         s = trainer.state
-        item = loss1.item() +loss2.item()
-        epoch_accuracy_start(y1.cpu().detach().numpy(),y_start)
-        epoch_accuracy_end(y2.cpu().detach().numpy(),y_end)
+        item = loss1.item() + loss2.item()
+        epoch_accuracy_start(y1.cpu().detach().numpy(), y_start)
+        epoch_accuracy_end(y2.cpu().detach().numpy(), y_end)
         print(
-            "{}/{} : {} - Start {:.3f} - End {:.3f}".format(s.epoch, s.max_epochs, s.iteration, loss1.item(),loss2.item())
+            "{}/{} : {} - Start {:.3f} - End {:.3f}".format(s.epoch, s.max_epochs, s.iteration, loss1.item(),
+                                                            loss2.item())
         )
         return item
 
@@ -299,7 +313,7 @@ if __name__ == '__main__':
             y_start = torch.cuda.FloatTensor(y_start)
             y_end = torch.cuda.FloatTensor(y_end)
 
-            return  torch.stack((y1_temp,y2_temp)),torch.stack((y_start,y_end))
+            return torch.stack((y1_temp, y2_temp)), torch.stack((y_start, y_end))
 
 
     evaluator = Engine(validation_step)
@@ -309,9 +323,8 @@ if __name__ == '__main__':
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_training_results(trainer):
-
         print("Training Results - Epoch: {}  Avg start accuracy: {:.2f}   Avg end accuracy: {:.2f}".format(
-            trainer.state.epoch,epoch_accuracy_start.result(),epoch_accuracy_end.result()))
+            trainer.state.epoch, epoch_accuracy_start.result(), epoch_accuracy_end.result()))
         epoch_accuracy_start.reset_states()
         epoch_accuracy_end.reset_states()
 
@@ -323,22 +336,31 @@ if __name__ == '__main__':
     #     print("Validation Results - Epoch: {}  Avg accuracy: {:.2f}"
     #           .format(trainer.state.epoch, metrics["val_acc"]))
 
-
-    trainer.run(train_dataset,max_epochs=3)
+    trainer.run(train_dataset, epoch_length=10,max_epochs=3)
 
     # evaluator.run(test_dataset)
     model.eval()
     thing = list(map(list, zip(*x_test)))
     ids, mask = np.squeeze(np.array(thing[0])), np.squeeze(np.array(thing[1]))
 
-    y_pred_start , y_pred_end = local_predict(model,ids,mask)
+    y_pred_start, y_pred_end = local_predict(model, ids, mask)
+    with open("y_pred_end", "w+b") as f:
+        pickle.dump(y_pred_end, f)
+    with open("y_pred_start", "w+b") as f:
+        pickle.dump(y_pred_start, f)
 
     #
     #
     import datetime
+
     t = str(datetime.datetime.now().time())
-    t.replace(":","_")
-    pytroch_metric(ids,y_pred_start,y_pred_end,y_test[:,0],y_test[:,1],tokenizer=tokenizer,
+    t = t.replace(":", "_")
+    pytroch_metric(ids, y_pred_start, y_pred_end, y_test[:, 0], y_test[:, 1], tokenizer=tokenizer,
                    log_name="AAprueba_{}.txt".format(t))
-    torch.save(model, "model_{}.h5".format(URL_TO_TINY))
+    torch.save(model.state_dict(), "model_MS-{}_{}".format(max_seq_length,URL_TO_TINY.replace("/","_")))
+
+    # new_model=build_model(max_seq_length=350)
+    #
+    # new_model.load_state_dict(torch.load("model_{}".format(URL_TO_TINY.replace("/","_"))))
+    # print(new_model)
 
